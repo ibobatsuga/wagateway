@@ -315,6 +315,7 @@
             contacts: [],
             broadcasts: [],
             integrations: [],
+            plugins: [],
             automationNodes: [
                 { id: 'n1', type: 'trigger', title: 'Pesan Masuk (Trigger)', desc: 'Saat pesan WA baru diterima', icon: 'ph-lightning', color: 'emerald' },
                 { id: 'n2', type: 'condition', title: 'Cek Kata Kunci', desc: 'Contains: "harga", "promo", "order"', icon: 'ph-git-branch', color: 'blue' },
@@ -374,11 +375,12 @@
         const menus = [
             { id: 'dashboard', label: 'Home Dashboard', icon: 'ph-house-line' },
             { id: 'sessions', label: 'WhatsApp Sessions', icon: 'ph-device-mobile' },
+            { id: 'plugins', label: 'Plugin Hub (OpenWA)', icon: 'ph-cards' },
+            { id: 'sheets', label: 'Bot Integrations', icon: 'ph-plugs-connected' },
             { id: 'api', label: 'API Keys', icon: 'ph-key' },
             { id: 'webhook', label: 'Webhook Logs', icon: 'ph-plugs' },
             { id: 'contacts', label: 'Contacts Database', icon: 'ph-users' },
             { id: 'broadcast', label: 'Campaign Broadcast', icon: 'ph-paper-plane-tilt' },
-            { id: 'sheets', label: 'Bot Integrations', icon: 'ph-plugs-connected' },
             { type: 'divider' },
             { id: 'automation', label: 'Automation Builder', icon: 'ph-git-merge' },
             { id: 'ai', label: 'AI Configurator', icon: 'ph-robot' },
@@ -1150,6 +1152,9 @@
                 `;
                 container.innerHTML = content;
             }
+            else if (menuId === 'plugins') {
+                renderPluginsPage();
+            }
             else if (menuId === 'sheets') {
                 // renderSheetsPage is called after async data load
                 renderSheetsPage(null);
@@ -1790,6 +1795,256 @@
         function loadBotConfig() {}
         function syncIntegrationsFromServerAndRender() { syncIntegrationsFromServer(); }
         function quickAddKeuanganBot() {}
+
+        /* ===== PLUGIN HUB (OpenWA Architecture) ===== */
+
+        async function syncPluginsFromServer() {
+            try {
+                const res = await fetch('/api/plugins');
+                const data = await res.json();
+                if (data.success) {
+                    state.plugins = data.plugins;
+                    saveState();
+                }
+            } catch (e) {
+                console.warn('[ATSUGA] Failed to fetch plugins:', e.message);
+            }
+        }
+
+        async function renderPluginsPage() {
+            if (state.activeMenu !== 'plugins') return;
+            await syncPluginsFromServer();
+
+            const container = document.getElementById('mainContent');
+            if (!container) return;
+
+            const pluginList = state.plugins || [];
+
+            const html = `
+                <div class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+                            <i class="ph-bold ph-cards text-emerald-600"></i>
+                            Plugin Hub (OpenWA Ecosystem)
+                        </h2>
+                        <p class="text-slate-500 text-xs sm:text-sm mt-1">
+                            Arsitektur plugin modular terinspirasi dari OpenWA untuk memperluas kapabilitas WhatsApp Gateway Anda.
+                        </p>
+                    </div>
+                    <span class="px-3 py-1.5 rounded-full text-xs font-extrabold bg-emerald-100 text-emerald-700 flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        ${pluginList.filter(p => p.enabled).length} / ${pluginList.length} Plugin Aktif
+                    </span>
+                </div>
+
+                <!-- Plugin Cards Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    ${pluginList.map(p => `
+                        <div class="card-white p-6 rounded-2xl relative border ${p.enabled ? 'border-emerald-200 shadow-md shadow-emerald-600/5' : 'border-slate-200'} transition-all">
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-12 h-12 rounded-2xl ${p.enabled ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20' : 'bg-slate-100 text-slate-400'} flex items-center justify-center text-2xl">
+                                        <i class="ph-bold ${p.icon || 'ph-plug'}"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-extrabold text-slate-900 text-base">${p.name}</h3>
+                                        <span class="inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${p.enabled ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'} mt-0.5">
+                                            ${p.category} • ${p.enabled ? 'Enabled' : 'Disabled'}
+                                        </span>
+                                    </div>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" ${p.enabled ? 'checked' : ''} onchange="togglePluginStatus('${p.id}', this.checked)" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                                </label>
+                            </div>
+
+                            <p class="text-xs text-slate-600 mb-5 leading-relaxed">${p.description}</p>
+
+                            <!-- Plugin-specific Settings Panel -->
+                            ${p.id === 'n8n-webhook' ? `
+                                <div class="bg-slate-50 p-4 rounded-xl space-y-3 mb-4 border border-slate-200">
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-700 mb-1">n8n Webhook URL (OpenWA Spec)</label>
+                                        <input type="url" id="n8n_webhookUrl" value="${p.config?.webhookUrl || ''}" placeholder="https://n8n.mycompany.com/webhook/wa-inbound"
+                                            class="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-900 font-mono outline-none focus:border-emerald-600">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-700 mb-1">Secret Key Header (Optional)</label>
+                                        <input type="password" id="n8n_secretKey" value="${p.config?.secretKey || ''}" placeholder="Header: X-OpenWA-Secret"
+                                            class="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-900 font-mono outline-none focus:border-emerald-600">
+                                    </div>
+                                    <button onclick="saveN8nPluginConfig()" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-2 rounded-lg text-xs transition-all flex items-center justify-center gap-1.5">
+                                        <i class="ph-bold ph-floppy-disk"></i> Simpan Setting n8n
+                                    </button>
+                                </div>
+                            ` : ''}
+
+                            ${p.id === 'ai-agent' ? `
+                                <div class="bg-slate-50 p-4 rounded-xl space-y-3 mb-4 border border-slate-200">
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label class="block text-[11px] font-bold text-slate-700 mb-1">AI Provider</label>
+                                            <select id="ai_provider" class="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-900 outline-none focus:border-emerald-600">
+                                                <option value="groq" ${p.config?.provider === 'groq' ? 'selected' : ''}>Groq AI (Super Fast)</option>
+                                                <option value="openai" ${p.config?.provider === 'openai' ? 'selected' : ''}>OpenAI (ChatGPT)</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-[11px] font-bold text-slate-700 mb-1">Model</label>
+                                            <input type="text" id="ai_model" value="${p.config?.model || 'llama-3.3-70b-versatile'}"
+                                                class="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-900 outline-none focus:border-emerald-600">
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-700 mb-1">API Key</label>
+                                        <input type="password" id="ai_apiKey" value="${p.config?.apiKey || ''}" placeholder="gsk_... atau sk-..."
+                                            class="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-900 font-mono outline-none focus:border-emerald-600">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-700 mb-1">System Prompt</label>
+                                        <textarea id="ai_systemPrompt" rows="2" class="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-900 outline-none focus:border-emerald-600">${p.config?.systemPrompt || ''}</textarea>
+                                    </div>
+                                    <button onclick="saveAiPluginConfig()" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-2 rounded-lg text-xs transition-all flex items-center justify-center gap-1.5">
+                                        <i class="ph-bold ph-floppy-disk"></i> Simpan Setting AI Agent
+                                    </button>
+                                </div>
+                            ` : ''}
+
+                            ${p.id === 'media-dispatcher' ? `
+                                <div class="bg-emerald-50/50 p-4 rounded-xl space-y-2 mb-4 border border-emerald-100">
+                                    <p class="text-xs font-bold text-emerald-900 flex items-center gap-1">
+                                        <i class="ph-bold ph-file-pdf text-emerald-600"></i> Form Test Media Dispatcher
+                                    </p>
+                                    <input type="text" id="media_to" placeholder="Nomor WA (contoh: 628123456789)" class="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-900 outline-none">
+                                    <input type="url" id="media_url" placeholder="URL Gambar / PDF (https://.../struk.pdf)" class="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-900 font-mono outline-none">
+                                    <input type="text" id="media_caption" placeholder="Keterangan / Caption" class="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-900 outline-none">
+                                    <button onclick="handleSendTestMedia()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-lg text-xs transition-all flex items-center justify-center gap-1.5">
+                                        <i class="ph-bold ph-paper-plane-tilt"></i> Kirim Media Sekarang
+                                    </button>
+                                </div>
+                            ` : ''}
+
+                            <div class="flex gap-2 border-t border-slate-100 pt-3">
+                                ${p.id === 'google-sheets' ? `
+                                    <button onclick="setMenu('sheets')" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5">
+                                        <i class="ph-bold ph-gear"></i> Kelola Config Sheets
+                                    </button>
+                                ` : `
+                                    <button onclick="testPlugin('${p.id}')" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5">
+                                        <i class="ph-bold ph-plugs-connected text-emerald-600"></i> Uji Koneksi Plugin
+                                    </button>
+                                `}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        async function togglePluginStatus(pluginId, enabled) {
+            try {
+                const res = await fetch(`/api/plugins/${pluginId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ enabled })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(`Plugin "${pluginId}" ${enabled ? 'diaktifkan' : 'dinonaktifkan'}`, 'success');
+                    await syncPluginsFromServer();
+                    renderPluginsPage();
+                }
+            } catch (e) {
+                showToast('Error: ' + e.message, 'error');
+            }
+        }
+
+        async function saveN8nPluginConfig() {
+            const webhookUrl = document.getElementById('n8n_webhookUrl')?.value?.trim();
+            const secretKey = document.getElementById('n8n_secretKey')?.value?.trim();
+            try {
+                const res = await fetch('/api/plugins/n8n-webhook', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ config: { webhookUrl, secretKey } })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast('Konfigurasi n8n Plugin disimpan!', 'success');
+                    await syncPluginsFromServer();
+                }
+            } catch (e) {
+                showToast('Error: ' + e.message, 'error');
+            }
+        }
+
+        async function saveAiPluginConfig() {
+            const provider = document.getElementById('ai_provider')?.value;
+            const model = document.getElementById('ai_model')?.value?.trim();
+            const apiKey = document.getElementById('ai_apiKey')?.value?.trim();
+            const systemPrompt = document.getElementById('ai_systemPrompt')?.value?.trim();
+
+            try {
+                const res = await fetch('/api/plugins/ai-agent', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ config: { provider, model, apiKey, systemPrompt } })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast('Konfigurasi AI CS Agent disimpan!', 'success');
+                    await syncPluginsFromServer();
+                }
+            } catch (e) {
+                showToast('Error: ' + e.message, 'error');
+            }
+        }
+
+        async function handleSendTestMedia() {
+            const to = document.getElementById('media_to')?.value?.trim();
+            const mediaUrl = document.getElementById('media_url')?.value?.trim();
+            const caption = document.getElementById('media_caption')?.value?.trim();
+
+            if (!to || !mediaUrl) {
+                showToast('Isi nomor WA dan Media URL terlebih dahulu', 'error');
+                return;
+            }
+
+            showToast('Mengirim berkas media...', 'info');
+            try {
+                const res = await fetch('/api/send-media', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ to, mediaUrl, caption, type: mediaUrl.endsWith('.pdf') ? 'document' : 'image' })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(`✅ Berkas media berhasil terkirim ke ${data.to}!`, 'success');
+                } else {
+                    showToast('Gagal kirim media: ' + data.error, 'error');
+                }
+            } catch (e) {
+                showToast('Error: ' + e.message, 'error');
+            }
+        }
+
+        async function testPlugin(pluginId) {
+            showToast(`Menguji plugin ${pluginId}...`, 'info');
+            try {
+                const res = await fetch(`/api/plugins/${pluginId}/test`, { method: 'POST' });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(`✅ Test OK! ${data.message || data.response || 'Plugin merespons baik.'}`, 'success');
+                } else {
+                    showToast('❌ Test gagal: ' + data.error, 'error');
+                }
+            } catch (e) {
+                showToast('Error: ' + e.message, 'error');
+            }
+        }
 
         function addAutomationNode(type) {
             const newNode = {

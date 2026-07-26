@@ -31,33 +31,95 @@ app.use(express.static(path.join(__dirname)));
 /* ================= Paths ================= */
 const SESSIONS_DIR = path.join(__dirname, 'whatsapp_sessions');
 const INTEGRATIONS_FILE = path.join(__dirname, 'integrations.json');
+const PLUGINS_FILE = path.join(__dirname, 'plugins.json');
 
 if (!fs.existsSync(SESSIONS_DIR)) fs.mkdirSync(SESSIONS_DIR, { recursive: true });
+
+/* ===============================================================
+   PLUGINS MANAGER (OpenWA-inspired Modular Architecture)
+   =============================================================== */
+
+const DEFAULT_PLUGINS = [
+    {
+        id: 'google-sheets',
+        name: 'Google Sheets Sync',
+        description: 'Otomatiskan logging pesan WA & Keuangan Bot ke Google Spreadsheet',
+        category: 'database',
+        icon: 'ph-table',
+        enabled: true,
+        config: {}
+    },
+    {
+        id: 'n8n-webhook',
+        name: 'n8n Automation & Webhook (OpenWA Specs)',
+        description: 'Forward pesan WhatsApp ke n8n / Make.com dengan skema JSON OpenWA',
+        category: 'automation',
+        icon: 'ph-lightning',
+        enabled: false,
+        config: {
+            webhookUrl: '',
+            secretKey: '',
+            events: ['message.received']
+        }
+    },
+    {
+        id: 'ai-agent',
+        name: 'AI CS Agent (Groq / OpenAI)',
+        description: 'Auto-responder cerdas berbasis LLM AI (Groq Llama-3 / GPT-4o)',
+        category: 'ai',
+        icon: 'ph-robot',
+        enabled: false,
+        config: {
+            provider: 'groq',
+            apiKey: '',
+            model: 'llama-3.3-70b-versatile',
+            systemPrompt: 'Kamu adalah ATSUGA Bot, asisten layanan pelanggan yang sangat ramah, profesional, dan cepat tanggap. Selalu jawab dalam Bahasa Indonesia.'
+        }
+    },
+    {
+        id: 'media-dispatcher',
+        name: 'Rich Media & Document Dispatcher',
+        description: 'Kirim gambar, dokumen PDF, nota, dan voice note via WhatsApp API',
+        category: 'media',
+        icon: 'ph-image',
+        enabled: true,
+        config: {}
+    }
+];
+
+function loadPlugins() {
+    try {
+        if (fs.existsSync(PLUGINS_FILE)) {
+            const raw = fs.readFileSync(PLUGINS_FILE, 'utf8');
+            const saved = JSON.parse(raw);
+            // Merge defaults with saved config to preserve new keys
+            return DEFAULT_PLUGINS.map(dp => {
+                const sp = saved.find(s => s.id === dp.id);
+                return sp ? { ...dp, ...sp, config: { ...dp.config, ...sp.config } } : dp;
+            });
+        }
+    } catch (e) {
+        console.error('[ATSUGA PLUGINS] Error loading plugins.json:', e.message);
+    }
+    return DEFAULT_PLUGINS;
+}
+
+function savePlugins(list) {
+    try {
+        fs.writeFileSync(PLUGINS_FILE, JSON.stringify(list, null, 2), 'utf8');
+    } catch (e) {
+        console.error('[ATSUGA PLUGINS] Error saving plugins.json:', e.message);
+    }
+}
+
+let plugins = loadPlugins();
+console.log(`[ATSUGA PLUGINS] ${plugins.length} plugin(s) loaded. Active: ${plugins.filter(p => p.enabled).map(p => p.id).join(', ')}`);
 
 /* ===============================================================
    INTEGRATIONS MANAGER
    Setiap integrasi = satu Apps Script + daftar trigger keywords
    Disimpan permanen ke integrations.json
    =============================================================== */
-
-/**
- * Schema integrasi:
- * {
- *   id: string (uuid)
- *   sessionId: string        // ID sesi WA yang terhubung ke integrasi ini
- *   name: string
- *   description: string
- *   appsScriptUrl: string
- *   sheetName: string        // nama tab di spreadsheet
- *   triggers: string[]       // keyword awal pesan, kosong = catch-all
- *   matchMode: 'startsWith' | 'catchAll'
- *   autoSync: boolean
- *   enabled: boolean
- *   createdAt: ISO string
- *   lastSync: string | null
- *   lastTest: string | null
- * }
- */
 
 function loadIntegrations() {
     try {
@@ -79,39 +141,26 @@ function saveIntegrations(list) {
     }
 }
 
-// In-memory store (loaded from disk on startup)
 let integrations = loadIntegrations();
-
 console.log(`[ATSUGA] Loaded ${integrations.length} integration(s) from disk.`);
 
-/**
- * Cari integrasi yang cocok untuk pesan masuk dari sesi tertentu.
- * Priority:
- *   1. Filter by sessionId → hanya integrasi milik sesi ini
- *   2. startsWith triggers → cek keyword awal pesan
- *   3. catchAll → fallback jika tidak ada trigger cocok
- */
 function findMatchingIntegration(sessionId, messageBody) {
     const lower = messageBody.trim().toLowerCase();
 
-    // Ambil semua integrasi milik session ini yang aktif
     const sessionIntegrations = integrations.filter(
         i => i.enabled && i.sessionId === sessionId
     );
 
-    // 1. Cari berdasarkan startsWith triggers
     for (const intg of sessionIntegrations) {
         if (intg.matchMode === 'catchAll' || !intg.triggers || intg.triggers.length === 0) continue;
         const matched = intg.triggers.some(t => lower.startsWith(t.toLowerCase().trim()));
         if (matched) return intg;
     }
 
-    // 2. Fallback: catch-all integration untuk session ini
     for (const intg of sessionIntegrations) {
         if (intg.matchMode === 'catchAll' || !intg.triggers || intg.triggers.length === 0) return intg;
     }
 
-    // 3. Fallback global: integrasi tanpa sessionId (berlaku semua)
     const globalIntegrations = integrations.filter(
         i => i.enabled && !i.sessionId
     );
@@ -129,8 +178,6 @@ function findMatchingIntegration(sessionId, messageBody) {
 
 /* ================= Active WA Sessions ================= */
 const activeSessions = new Map();
-
-/* ================= Default Reply ================= */
 const DEFAULT_REPLY = '⚠️ Maaf, perintah tidak dikenal.\n\nKetik *help* untuk melihat daftar perintah yang tersedia.';
 
 /* ===============================================================
@@ -235,7 +282,7 @@ async function startBaileysSession(sessionId, sessionName = 'WhatsApp Device') {
         });
 
         /* =========================================================
-           MESSAGE ROUTER — Inti ekosistem multi-integrasi
+           MESSAGE ROUTER — OpenWA Plugin Pipeline
            ========================================================= */
         sock.ev.on('messages.upsert', async ({ messages, type }) => {
             if (type !== 'notify') return;
@@ -256,48 +303,111 @@ async function startBaileysSession(sessionId, sessionName = 'WhatsApp Device') {
 
                 console.log(`[ATSUGA ROUTER] 📩 Dari ${from}: "${body}"`);
 
-                // Cari integrasi yang cocok (filter by sessionId dulu)
-                const matched = findMatchingIntegration(sessionId, body);
-
-                if (!matched) {
-                    // Tidak ada integrasi yang cocok → kirim default reply
-                    await sock.sendMessage(from, { text: DEFAULT_REPLY });
-                    console.log(`[ATSUGA ROUTER] ℹ️  Tidak ada integrasi cocok → default reply`);
-                    continue;
+                // 1. PLUGIN: n8n & Universal Webhook (OpenWA Payload Spec)
+                const n8nPlugin = plugins.find(p => p.id === 'n8n-webhook');
+                if (n8nPlugin?.enabled && n8nPlugin.config?.webhookUrl) {
+                    try {
+                        const openWaPayload = {
+                            event: 'message.received',
+                            session: sessionId,
+                            senderPhone: sessionData.phone,
+                            from,
+                            messageId: msg.key.id,
+                            body,
+                            timestamp: Date.now()
+                        };
+                        fetch(n8nPlugin.config.webhookUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                ...(n8nPlugin.config.secretKey ? { 'X-OpenWA-Secret': n8nPlugin.config.secretKey } : {})
+                            },
+                            body: JSON.stringify(openWaPayload)
+                        }).catch(e => console.error('[n8n Webhook Error]:', e.message));
+                        console.log(`[ATSUGA ROUTER] ⚡ Forwarded to n8n OpenWA Webhook`);
+                    } catch (e) {}
                 }
 
-                console.log(`[ATSUGA ROUTER] ✅ Match: "${matched.name}" → forward ke Apps Script`);
+                // 2. PLUGIN: Google Sheets Sync (Keuangan Bot & Lead Sync)
+                const sheetsPlugin = plugins.find(p => p.id === 'google-sheets');
+                if (sheetsPlugin?.enabled) {
+                    const matched = findMatchingIntegration(sessionId, body);
 
-                try {
-                    const response = await fetch(matched.appsScriptUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            session: sessionId,
-                            from,
-                            body
-                        }),
-                        signal: AbortSignal.timeout(20000)
-                    });
+                    if (matched) {
+                        console.log(`[ATSUGA ROUTER] ✅ Match: "${matched.name}" → forward ke Apps Script`);
 
-                    const replyText = await response.text();
+                        try {
+                            const response = await fetch(matched.appsScriptUrl, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    session: sessionId,
+                                    from,
+                                    body
+                                }),
+                                signal: AbortSignal.timeout(20000)
+                            });
 
-                    if (replyText && replyText.trim()) {
-                        await sock.sendMessage(from, { text: replyText.trim() });
-                        console.log(`[ATSUGA ROUTER] ✅ Balasan terkirim ke ${from} via "${matched.name}"`);
-                        // Update lastSync timestamp
-                        const midx = integrations.findIndex(i => i.id === matched.id);
-                        if (midx !== -1) {
-                            integrations[midx].lastSync = new Date().toISOString();
-                            saveIntegrations(integrations);
+                            const replyText = await response.text();
+
+                            if (replyText && replyText.trim()) {
+                                await sock.sendMessage(from, { text: replyText.trim() });
+                                console.log(`[ATSUGA ROUTER] ✅ Balasan terkirim ke ${from} via "${matched.name}"`);
+                                const midx = integrations.findIndex(i => i.id === matched.id);
+                                if (midx !== -1) {
+                                    integrations[midx].lastSync = new Date().toISOString();
+                                    saveIntegrations(integrations);
+                                }
+                            }
+                            continue; // Process next message if handled
+                        } catch (err) {
+                            console.error(`[ATSUGA ROUTER] ❌ Error forward ke "${matched.name}": ${err.message}`);
                         }
                     }
-                } catch (err) {
-                    console.error(`[ATSUGA ROUTER] ❌ Error forward ke "${matched.name}": ${err.message}`);
-                    await sock.sendMessage(from, {
-                        text: `❌ Bot "${matched.name}" sedang tidak merespons. Coba lagi nanti.`
-                    });
                 }
+
+                // 3. PLUGIN: AI CS Agent (Groq / OpenAI Auto-Responder)
+                const aiPlugin = plugins.find(p => p.id === 'ai-agent');
+                if (aiPlugin?.enabled && aiPlugin.config?.apiKey) {
+                    try {
+                        console.log(`[ATSUGA ROUTER] 🤖 Forwarding to AI Agent (${aiPlugin.config.provider})...`);
+                        const isGroq = aiPlugin.config.provider === 'groq';
+                        const aiEndpoint = isGroq
+                            ? 'https://api.groq.com/openai/v1/chat/completions'
+                            : 'https://api.openai.com/v1/chat/completions';
+
+                        const aiRes = await fetch(aiEndpoint, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${aiPlugin.config.apiKey}`
+                            },
+                            body: JSON.stringify({
+                                model: aiPlugin.config.model || (isGroq ? 'llama-3.3-70b-versatile' : 'gpt-4o'),
+                                messages: [
+                                    { role: 'system', content: aiPlugin.config.systemPrompt },
+                                    { role: 'user', content: body }
+                                ],
+                                temperature: 0.7
+                            }),
+                            signal: AbortSignal.timeout(15000)
+                        });
+
+                        const aiJson = await aiRes.json();
+                        const aiReply = aiJson.choices?.[0]?.message?.content;
+                        if (aiReply && aiReply.trim()) {
+                            await sock.sendMessage(from, { text: aiReply.trim() });
+                            console.log(`[ATSUGA ROUTER] 🤖 AI Agent responded to ${from}`);
+                            continue;
+                        }
+                    } catch (e) {
+                        console.error('[AI Agent Error]:', e.message);
+                    }
+                }
+
+                // Fallback default reply
+                await sock.sendMessage(from, { text: DEFAULT_REPLY });
+                console.log(`[ATSUGA ROUTER] ℹ️  Default reply sent`);
             }
         });
 
@@ -496,6 +606,128 @@ app.post('/api/integrations/:id/test', async (req, res) => {
         res.json({ success: true, status: response.status, response: text.substring(0, 800) });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+/* ===============================================================
+   REST API — PLUGINS CRUD & MEDIA DISPATCHER
+   =============================================================== */
+
+// GET all plugins
+app.get('/api/plugins', (req, res) => {
+    res.json({ success: true, count: plugins.length, plugins });
+});
+
+// PUT update plugin
+app.put('/api/plugins/:id', (req, res) => {
+    const idx = plugins.findIndex(p => p.id === req.params.id);
+    if (idx === -1) return res.status(404).json({ success: false, error: 'Plugin tidak ditemukan.' });
+
+    const { enabled, config } = req.body;
+    if (enabled !== undefined) plugins[idx].enabled = Boolean(enabled);
+    if (config !== undefined) plugins[idx].config = { ...plugins[idx].config, ...config };
+
+    savePlugins(plugins);
+    console.log(`[ATSUGA PLUGINS] ✏️ Plugin "${plugins[idx].id}" updated. Enabled: ${plugins[idx].enabled}`);
+    res.json({ success: true, plugin: plugins[idx] });
+});
+
+// POST test plugin connection
+app.post('/api/plugins/:id/test', async (req, res) => {
+    const plugin = plugins.find(p => p.id === req.params.id);
+    if (!plugin) return res.status(404).json({ success: false, error: 'Plugin tidak ditemukan.' });
+
+    if (plugin.id === 'n8n-webhook') {
+        if (!plugin.config?.webhookUrl) {
+            return res.status(400).json({ success: false, error: 'Webhook URL belum diisi.' });
+        }
+        try {
+            const testPayload = {
+                event: 'test.connection',
+                session: 'test_session',
+                senderPhone: '+6280000000',
+                from: '6280000000@s.whatsapp.net',
+                messageId: 'TEST_' + Date.now(),
+                body: 'Halo n8n! Test integrasi OpenWA ATSUGA.',
+                timestamp: Date.now()
+            };
+            const r = await fetch(plugin.config.webhookUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(testPayload),
+                signal: AbortSignal.timeout(10000)
+            });
+            const txt = await r.text();
+            res.json({ success: true, status: r.status, response: txt.substring(0, 500) });
+        } catch (e) {
+            res.status(500).json({ success: false, error: e.message });
+        }
+    } else if (plugin.id === 'ai-agent') {
+        if (!plugin.config?.apiKey) {
+            return res.status(400).json({ success: false, error: 'API Key AI Agent belum diisi.' });
+        }
+        try {
+            const isGroq = plugin.config.provider === 'groq';
+            const endpoint = isGroq ? 'https://api.groq.com/openai/v1/chat/completions' : 'https://api.openai.com/v1/chat/completions';
+            const r = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${plugin.config.apiKey}` },
+                body: JSON.stringify({
+                    model: plugin.config.model || (isGroq ? 'llama-3.3-70b-versatile' : 'gpt-4o'),
+                    messages: [{ role: 'user', content: 'Ping' }],
+                    max_tokens: 10
+                }),
+                signal: AbortSignal.timeout(10000)
+            });
+            const j = await r.json();
+            res.json({ success: true, response: j.choices?.[0]?.message?.content || 'OK' });
+        } catch (e) {
+            res.status(500).json({ success: false, error: e.message });
+        }
+    } else {
+        res.json({ success: true, message: `Plugin ${plugin.name} aktif & siap digunakan.` });
+    }
+});
+
+// POST send media (Images, PDFs, Documents) via Baileys API
+app.post('/api/send-media', async (req, res) => {
+    const { sessionId, to, type, mediaUrl, caption, fileName } = req.body;
+    if (!to || !mediaUrl) {
+        return res.status(400).json({ success: false, error: 'Parameter to dan mediaUrl wajib diisi.' });
+    }
+
+    let targetSession = sessionId && activeSessions.has(sessionId)
+        ? activeSessions.get(sessionId)
+        : [...activeSessions.values()].find(s => s.status === 'Connected' && s.sock);
+
+    if (!targetSession?.sock || targetSession.status !== 'Connected') {
+        return res.status(400).json({ success: false, error: 'Tidak ada perangkat WhatsApp yang terhubung.' });
+    }
+
+    let cleanPhone = to.replace(/[^0-9]/g, '');
+    if (cleanPhone.startsWith('0')) cleanPhone = '62' + cleanPhone.slice(1);
+    const jid = cleanPhone.includes('@s.whatsapp.net') ? cleanPhone : `${cleanPhone}@s.whatsapp.net`;
+
+    try {
+        let msgContent = {};
+        if (type === 'document' || type === 'pdf') {
+            msgContent = {
+                document: { url: mediaUrl },
+                mimetype: 'application/pdf',
+                fileName: fileName || 'document.pdf',
+                caption: caption || ''
+            };
+        } else {
+            msgContent = {
+                image: { url: mediaUrl },
+                caption: caption || ''
+            };
+        }
+
+        const result = await targetSession.sock.sendMessage(jid, msgContent);
+        res.json({ success: true, messageId: result.key.id, to: cleanPhone, sentVia: targetSession.phone });
+    } catch (err) {
+        res.status(500).json({ success: false, error: 'Gagal mengirim media: ' + err.message });
     }
 });
 
