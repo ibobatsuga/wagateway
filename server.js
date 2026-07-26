@@ -6,13 +6,6 @@ const QRCode = require('qrcode');
 const pino = require('pino');
 const { randomUUID } = require('crypto');
 
-const {
-    default: makeWASocket,
-    useMultiFileAuthState,
-    DisconnectReason,
-    fetchLatestBaileysVersion
-} = require('@whiskeysockets/baileys');
-
 /* ================= Global Crash Prevention ================= */
 process.on('uncaughtException', (err) => {
     console.error('[ATSUGA] ⚠️  Unhandled Exception (server tetap berjalan):', err.message);
@@ -28,12 +21,33 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname)));
 
-/* ================= Paths ================= */
-const SESSIONS_DIR = path.join(__dirname, 'whatsapp_sessions');
-const INTEGRATIONS_FILE = path.join(__dirname, 'integrations.json');
-const PLUGINS_FILE = path.join(__dirname, 'plugins.json');
+/* ================= Dynamic Baileys ESM Loader ================= */
+let makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion;
 
-if (!fs.existsSync(SESSIONS_DIR)) fs.mkdirSync(SESSIONS_DIR, { recursive: true });
+async function initBaileys() {
+    if (!makeWASocket) {
+        try {
+            const baileys = await import('@whiskeysockets/baileys');
+            makeWASocket = baileys.default || baileys.makeWASocket;
+            useMultiFileAuthState = baileys.useMultiFileAuthState;
+            DisconnectReason = baileys.DisconnectReason;
+            fetchLatestBaileysVersion = baileys.fetchLatestBaileysVersion;
+        } catch (err) {
+            console.error('[ATSUGA WA] Baileys ESM import error:', err.message);
+        }
+    }
+}
+
+/* ================= Paths (Vercel Read-Only Safe) ================= */
+const IS_VERCEL = Boolean(process.env.VERCEL);
+const BASE_DIR = IS_VERCEL ? '/tmp' : __dirname;
+const SESSIONS_DIR = path.join(BASE_DIR, 'whatsapp_sessions');
+const INTEGRATIONS_FILE = path.join(BASE_DIR, 'integrations.json');
+const PLUGINS_FILE = path.join(BASE_DIR, 'plugins.json');
+
+if (!fs.existsSync(SESSIONS_DIR)) {
+    try { fs.mkdirSync(SESSIONS_DIR, { recursive: true }); } catch (e) {}
+}
 
 /* ===============================================================
    PLUGINS MANAGER (OpenWA-inspired Modular Architecture)
@@ -184,6 +198,8 @@ const DEFAULT_REPLY = '⚠️ Maaf, perintah tidak dikenal.\n\nKetik *help* untu
    BAILEYS SESSION CONTROLLER
    =============================================================== */
 async function startBaileysSession(sessionId, sessionName = 'WhatsApp Device') {
+    await initBaileys();
+
     if (activeSessions.has(sessionId)) {
         const existing = activeSessions.get(sessionId);
         if (['Connected', 'Scan QR', 'Connecting'].includes(existing.status)) return existing;
@@ -738,11 +754,16 @@ app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-app.listen(PORT, () => {
-    console.log(`\n==================================================`);
-    console.log(` 🚀 ATSUGA WhatsApp Gateway v3.0 Running!`);
-    console.log(` 🌐 Dashboard: http://localhost:${PORT}`);
-    console.log(` ⚡ API:       http://localhost:${PORT}/api/status`);
-    console.log(` 🔗 Integrations loaded: ${integrations.length}`);
-    console.log(`==================================================\n`);
-});
+if (!process.env.VERCEL) {
+    app.listen(PORT, () => {
+        console.log(`\n==================================================`);
+        console.log(` 🚀 ATSUGA WhatsApp Gateway v3.0 Running!`);
+        console.log(` 🌐 Dashboard: http://localhost:${PORT}`);
+        console.log(` ⚡ API:       http://localhost:${PORT}/api/status`);
+        console.log(` 🔗 Integrations loaded: ${integrations.length}`);
+        console.log(`==================================================\n`);
+    });
+}
+
+module.exports = app;
+
