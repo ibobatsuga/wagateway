@@ -13,13 +13,15 @@
     <!-- Chart.js for Realtime Data Visualization -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Google Fonts (Plus Jakarta Sans for ultra-modern SaaS look) -->
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap"
+        rel="stylesheet">
 
     <script>
         tailwind.config = {
             theme: {
                 extend: {
-                    fontFamily: { 
+                    fontFamily: {
                         sans: ['Plus Jakarta Sans', 'sans-serif'],
                         mono: ['Fira Code', 'monospace']
                     },
@@ -97,8 +99,13 @@
         }
 
         @keyframes scanline {
-            0% { transform: translateY(-100%); }
-            100% { transform: translateY(1000%); }
+            0% {
+                transform: translateY(-100%);
+            }
+
+            100% {
+                transform: translateY(1000%);
+            }
         }
 
         .animate-scanline {
@@ -106,8 +113,15 @@
         }
 
         @keyframes pulse-glow {
-            0%, 100% { opacity: 0.5; }
-            50% { opacity: 1; }
+
+            0%,
+            100% {
+                opacity: 0.5;
+            }
+
+            50% {
+                opacity: 1;
+            }
         }
 
         .node-glow {
@@ -116,18 +130,25 @@
     </style>
 </head>
 
-<body class="m-0 p-0 flex justify-center bg-[#f4f4f8] text-slate-800 overflow-hidden antialiased selection:bg-emerald-200">
+<body
+    class="m-0 p-0 flex justify-center bg-[#f4f4f8] text-slate-800 overflow-hidden antialiased selection:bg-emerald-200">
 
     <!-- LOGIN SCREEN -->
     <div id="loginScreen"
         class="fixed inset-0 z-[100] flex items-center justify-center bg-[#f4f4f8] px-4 transition-all duration-300">
-        <div class="card-white w-full max-w-md p-8 rounded-3xl shadow-xl relative overflow-hidden bg-white border border-slate-200/80">
+        <div
+            class="card-white w-full max-w-md p-8 rounded-3xl shadow-xl relative overflow-hidden bg-white border border-slate-200/80">
             <!-- Decorative blur blobs -->
-            <div class="absolute -top-20 -right-20 w-48 h-48 bg-emerald-200/60 rounded-full blur-3xl pointer-events-none"></div>
-            <div class="absolute -bottom-20 -left-20 w-48 h-48 bg-yellow-200/60 rounded-full blur-3xl pointer-events-none"></div>
+            <div
+                class="absolute -top-20 -right-20 w-48 h-48 bg-emerald-200/60 rounded-full blur-3xl pointer-events-none">
+            </div>
+            <div
+                class="absolute -bottom-20 -left-20 w-48 h-48 bg-yellow-200/60 rounded-full blur-3xl pointer-events-none">
+            </div>
 
             <div class="flex items-center gap-3 mb-6 relative z-10">
-                <div class="w-11 h-11 rounded-2xl bg-emerald-600 flex items-center justify-center text-white shadow-lg shadow-emerald-600/30">
+                <div
+                    class="w-11 h-11 rounded-2xl bg-emerald-600 flex items-center justify-center text-white shadow-lg shadow-emerald-600/30">
                     <i class="ph-bold ph-whatsapp-logo text-2xl"></i>
                 </div>
                 <div>
@@ -140,25 +161,32 @@
             <p class="text-xs text-slate-500 mb-4">Masuk ke workspace Anda sebagai Super Admin / Admin</p>
 
             <!-- Quick Credential Helper Pill -->
-            <div class="mb-5 p-3 rounded-2xl bg-slate-50 border border-slate-200 flex justify-between items-center text-xs">
+            <div
+                class="mb-5 p-3 rounded-2xl bg-slate-50 border border-slate-200 flex justify-between items-center text-xs">
                 <div>
-                    <span class="block font-bold text-slate-800 text-[11px]">Super Admin: <code class="text-purple-700">superadmin</code></span>
-                    <span class="block font-medium text-slate-500 text-[10px]">Admin 1-20: <code class="text-emerald-700">admin1</code> ... <code class="text-emerald-700">admin20</code></span>
+                    <span class="block font-bold text-slate-800 text-[11px]">Super Admin: <code
+                            class="text-purple-700">superadmin</code></span>
+                    <span class="block font-medium text-slate-500 text-[10px]">Admin 1-20: <code
+                            class="text-emerald-700">admin1</code> ... <code
+                            class="text-emerald-700">admin20</code></span>
                 </div>
-                <button type="button" onclick="openModal('viewAccounts')" class="text-xs text-emerald-600 font-bold hover:underline bg-emerald-50 px-2.5 py-1.5 rounded-lg border border-emerald-200">
+                <button type="button" onclick="openModal('viewAccounts')"
+                    class="text-xs text-emerald-600 font-bold hover:underline bg-emerald-50 px-2.5 py-1.5 rounded-lg border border-emerald-200">
                     Daftar Akun
                 </button>
             </div>
 
             <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4 relative z-10">
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">Username</label>
+                    <label
+                        class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">Username</label>
                     <input type="text" id="username"
                         class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-600 outline-none transition-all placeholder-slate-400"
                         placeholder="superadmin atau admin1" value="superadmin" required>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">Password</label>
+                    <label
+                        class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">Password</label>
                     <input type="password" id="password"
                         class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-600 outline-none transition-all placeholder-slate-400"
                         placeholder="••••••••" value="SuperAdminPass2026!" required>
@@ -185,17 +213,20 @@
             onclick="toggleSidebar()"></div>
         <aside id="sidebar"
             class="fixed md:relative inset-y-0 left-0 z-50 w-64 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out flex flex-col h-full bg-white border-r border-slate-200/80 shadow-sm">
-            
+
             <!-- Brand & Top Button -->
             <div class="p-6 border-b border-slate-100 flex-none space-y-4">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-3">
-                        <div class="w-9 h-9 rounded-xl bg-emerald-600 flex items-center justify-center text-white shadow-md shadow-emerald-600/30">
+                        <div
+                            class="w-9 h-9 rounded-xl bg-emerald-600 flex items-center justify-center text-white shadow-md shadow-emerald-600/30">
                             <i class="ph-bold ph-whatsapp-logo text-xl"></i>
                         </div>
                         <div>
-                            <span class="text-base font-extrabold text-slate-900 tracking-tight block leading-none">ATSUGA</span>
-                            <span class="text-[10px] text-emerald-600 font-bold uppercase tracking-wider">Gateway v2.4</span>
+                            <span
+                                class="text-base font-extrabold text-slate-900 tracking-tight block leading-none">ATSUGA</span>
+                            <span class="text-[10px] text-emerald-600 font-bold uppercase tracking-wider">Gateway
+                                v2.4</span>
                         </div>
                     </div>
                     <button onclick="toggleSidebar()" class="md:hidden text-slate-400 hover:text-slate-700">
@@ -204,7 +235,8 @@
                 </div>
 
                 <!-- Create Action Pill Button -->
-                <button onclick="openModal('addSession')" class="w-full bg-slate-50 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 border border-slate-200 hover:border-emerald-300 rounded-xl py-2.5 px-3 text-xs font-bold transition-all flex items-center justify-center gap-2">
+                <button onclick="openModal('addSession')"
+                    class="w-full bg-slate-50 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 border border-slate-200 hover:border-emerald-300 rounded-xl py-2.5 px-3 text-xs font-bold transition-all flex items-center justify-center gap-2">
                     <i class="ph-bold ph-plus-circle text-base text-emerald-600"></i>
                     <span>Connect Workspace</span>
                 </button>
@@ -218,12 +250,14 @@
             <!-- Sidebar Upgrade Card -->
             <div class="px-4 py-3 flex-none">
                 <div class="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 text-center">
-                    <div class="w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center mx-auto mb-2 shadow-md shadow-emerald-500/30">
+                    <div
+                        class="w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center mx-auto mb-2 shadow-md shadow-emerald-500/30">
                         <i class="ph-bold ph-crown text-sm"></i>
                     </div>
                     <p class="text-xs font-bold text-slate-900">Production Mode</p>
                     <p class="text-[10px] text-slate-500 mt-0.5 mb-3">Real Gateway Active</p>
-                    <button onclick="setMenu('billing')" class="w-full border-2 border-emerald-600 text-emerald-700 hover:bg-emerald-600 hover:text-white font-bold rounded-xl py-1.5 text-xs transition-all">
+                    <button onclick="setMenu('billing')"
+                        class="w-full border-2 border-emerald-600 text-emerald-700 hover:bg-emerald-600 hover:text-white font-bold rounded-xl py-1.5 text-xs transition-all">
                         Server Health
                     </button>
                 </div>
@@ -238,15 +272,19 @@
         <!-- RIGHT CONTENT WRAPPER -->
         <main class="flex-1 flex flex-col overflow-hidden relative w-full bg-[#f4f4f8]">
             <!-- Top Header Bar -->
-            <header class="h-16 flex-none bg-white border-b border-slate-200/80 flex items-center justify-between px-4 sm:px-8 z-30 sticky top-0 shadow-sm">
+            <header
+                class="h-16 flex-none bg-white border-b border-slate-200/80 flex items-center justify-between px-4 sm:px-8 z-30 sticky top-0 shadow-sm">
                 <div class="flex items-center gap-3">
-                    <button onclick="toggleSidebar()" class="md:hidden w-9 h-9 flex items-center justify-center text-slate-600 hover:text-slate-900 rounded-xl bg-slate-100">
+                    <button onclick="toggleSidebar()"
+                        class="md:hidden w-9 h-9 flex items-center justify-center text-slate-600 hover:text-slate-900 rounded-xl bg-slate-100">
                         <i class="ph ph-list text-xl"></i>
                     </button>
                     <!-- Quick Search Input Bar -->
-                    <div class="hidden sm:flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-1.5 w-72 focus-within:border-emerald-600 focus-within:bg-white transition-all">
+                    <div
+                        class="hidden sm:flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-1.5 w-72 focus-within:border-emerald-600 focus-within:bg-white transition-all">
                         <i class="ph-bold ph-magnifying-glass text-slate-400 text-sm"></i>
-                        <input type="text" placeholder="Ketik pencarian cepat..." class="bg-transparent text-xs text-slate-800 outline-none w-full placeholder-slate-400">
+                        <input type="text" placeholder="Ketik pencarian cepat..."
+                            class="bg-transparent text-xs text-slate-800 outline-none w-full placeholder-slate-400">
                     </div>
                 </div>
 
@@ -339,7 +377,7 @@
             try {
                 const u = localStorage.getItem('atsuga_user');
                 if (u) return JSON.parse(u);
-            } catch (e) {}
+            } catch (e) { }
             return usersDB[0]; // fallback to superadmin
         }
 
@@ -375,7 +413,7 @@
         const menus = [
             { id: 'dashboard', label: 'Home Dashboard', icon: 'ph-house-line' },
             { id: 'sessions', label: 'WhatsApp Sessions', icon: 'ph-device-mobile' },
-            { id: 'plugins', label: 'Plugin Hub (OpenWA)', icon: 'ph-cards' },
+            { id: 'plugins', label: 'Plugin Hub', icon: 'ph-cards' },
             { id: 'sheets', label: 'Bot Integrations', icon: 'ph-plugs-connected' },
             { id: 'api', label: 'API Keys', icon: 'ph-key' },
             { id: 'webhook', label: 'Webhook Logs', icon: 'ph-plugs' },
@@ -428,12 +466,12 @@
         function showApp() {
             const loginScreen = document.getElementById('loginScreen');
             const appScreen = document.getElementById('appScreen');
-            
+
             if (loginScreen) {
                 loginScreen.style.display = 'none';
                 loginScreen.classList.add('hidden', 'opacity-0', 'pointer-events-none');
             }
-            
+
             if (appScreen) {
                 appScreen.style.display = 'flex';
                 appScreen.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
@@ -450,15 +488,15 @@
         function handleLogout() {
             localStorage.removeItem('atsuga_auth');
             localStorage.removeItem('atsuga_user');
-            
+
             const loginScreen = document.getElementById('loginScreen');
             const appScreen = document.getElementById('appScreen');
-            
+
             if (appScreen) {
                 appScreen.style.display = 'none';
                 appScreen.classList.add('hidden', 'opacity-0', 'pointer-events-none');
             }
-            
+
             if (loginScreen) {
                 loginScreen.style.display = 'flex';
                 loginScreen.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
@@ -476,7 +514,7 @@
             if (!container) return;
 
             let html = '';
-            
+
             // Render Reset State Button ONLY if Super Admin
             if (currentUser.role === 'superadmin') {
                 html += `
@@ -640,7 +678,7 @@
                                     </div>
                                     <h4 class="text-xs font-bold text-slate-900">Bot Integrations</h4>
                                     <p class="text-[11px] text-slate-500">${state.integrations?.length || 0} integrasi terdaftar</p>
-                                    <span class="inline-block px-3 py-0.5 rounded-full text-[10px] font-bold ${(state.integrations?.filter(i=>i.enabled)?.length || 0) > 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}">${(state.integrations?.filter(i=>i.enabled)?.length || 0) > 0 ? (state.integrations.filter(i=>i.enabled).length + ' Aktif') : 'Belum Ada'}</span>
+                                    <span class="inline-block px-3 py-0.5 rounded-full text-[10px] font-bold ${(state.integrations?.filter(i => i.enabled)?.length || 0) > 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}">${(state.integrations?.filter(i => i.enabled)?.length || 0) > 0 ? (state.integrations.filter(i => i.enabled).length + ' Aktif') : 'Belum Ada'}</span>
                                 </div>
                             </div>
 
@@ -1110,8 +1148,8 @@
                                     </thead>
                                     <tbody class="divide-y divide-slate-100">
                                         ${state.broadcasts.length > 0 ? state.broadcasts.map(b => {
-                                            const pct = Math.round((b.sent / b.total) * 100);
-                                            return `
+                    const pct = Math.round((b.sent / b.total) * 100);
+                    return `
                                                 <tr class="hover:bg-slate-50/50 transition-colors">
                                                     <td class="px-4 py-4 text-slate-900 font-bold">
                                                         <p class="font-extrabold text-sm">${b.name}</p>
@@ -1137,7 +1175,7 @@
                                                     </td>
                                                 </tr>
                                             `;
-                                        }).join('') : `
+                }).join('') : `
                                             <tr>
                                                 <td colspan="5" class="py-12 text-center text-slate-400 text-xs">
                                                     Belum ada campaign broadcast diluncurkan. Buat campaign baru menggunakan form di sebelah kiri.
@@ -1579,7 +1617,7 @@
                 const [intgRes] = await Promise.all([fetch('/api/integrations')]);
                 const intgData = await intgRes.json();
                 if (intgData.success) { state.integrations = intgData.integrations; saveState(); }
-            } catch(e) {}
+            } catch (e) { }
 
             const container = document.getElementById('mainContent');
             if (!container) return;
@@ -1604,7 +1642,7 @@
                     const diff = Date.now() - new Date(sessionIntg.lastSync).getTime();
                     const m = Math.floor(diff / 60000);
                     return m < 1 ? 'Baru saja' : `${m}m ago`;
-                  })()
+                })()
                 : 'Belum ada';
 
             const html = `
@@ -1619,11 +1657,11 @@
                     ${connectedSessions.map(s => `
                         <button onclick="renderSheetsPage('${s.id}')"
                             class="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${s.id === selectedSessionId
-                                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/25'
-                                : 'bg-white border border-slate-200 text-slate-600 hover:border-emerald-400'}">
+                    ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/25'
+                    : 'bg-white border border-slate-200 text-slate-600 hover:border-emerald-400'}">
                             <i class="ph-fill ph-whatsapp-logo"></i>
                             ${s.phone || s.name}
-                            ${((state.integrations||[]).some(i=>i.sessionId===s.id&&i.enabled)) ? '<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block"></span>' : ''}
+                            ${((state.integrations || []).some(i => i.sessionId === s.id && i.enabled)) ? '<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block"></span>' : ''}
                         </button>
                     `).join('')}
                 </div>` : ''}
@@ -1791,10 +1829,10 @@
         }
 
         // Legacy stubs
-        function testBotConnection() {}
-        function loadBotConfig() {}
+        function testBotConnection() { }
+        function loadBotConfig() { }
         function syncIntegrationsFromServerAndRender() { syncIntegrationsFromServer(); }
-        function quickAddKeuanganBot() {}
+        function quickAddKeuanganBot() { }
 
         /* ===== PLUGIN HUB (OpenWA Architecture) ===== */
 
@@ -2425,7 +2463,7 @@
                         if (data.status === 'Connected') {
                             clearInterval(qrPollInterval);
                             qrPollInterval = null;
-                            
+
                             const newSession = {
                                 id: sessionId,
                                 name: sessionName,
@@ -2434,12 +2472,12 @@
                                 battery: 100,
                                 lastSeen: 'Just now'
                             };
-                            
+
                             state.sessions = state.sessions.filter(s => s.id !== sessionId);
                             state.sessions.push(newSession);
                             state.stats.totalSessions = state.sessions.length;
                             saveState();
-                            
+
                             closeModal();
                             renderContent('sessions');
                             showToast(`✅ TERHUBUNG! WhatsApp: ${newSession.phone}`, 'success');
