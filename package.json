@@ -1,0 +1,28 @@
+{
+  "name": "wagate-atsuga",
+  "version": "2.4.0",
+  "description": "ATSUGA - WhatsApp API Gateway & AI Automation Platform Backend Server",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "^7.0.0-rc13",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "pino": "^10.3.1",
+    "qrcode": "^1.5.4"
+  },
+  "keywords": [
+    "whatsapp",
+    "gateway",
+    "baileys",
+    "api",
+    "automation",
+    "ai",
+    "sheets-sync"
+  ],
+  "author": "ATSUGA Team",
+  "license": "MIT"
+}

@@ -1,0 +1,4 @@
+node_modules/
+whatsapp_sessions/
+.DS_Store
+*.log

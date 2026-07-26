@@ -1,0 +1,2287 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ATSUGA - WhatsApp API Gateway & AI Automation Platform</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Phosphor Icons (SaaS Vibe) -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- Chart.js for Realtime Data Visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts (Plus Jakarta Sans for ultra-modern SaaS look) -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { 
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                        mono: ['Fira Code', 'monospace']
+                    },
+                    colors: {
+                        emerald: {
+                            50: '#ecfdf5',
+                            100: '#d1fae5',
+                            200: '#a7f3d0',
+                            400: '#34d399',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857',
+                            800: '#065f46'
+                        },
+                        brand: {
+                            bg: '#f4f4f8',
+                            yellow: '#fde047',
+                            yellowLight: '#fef9c3',
+                            greenBg: '#059669'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f4f4f8;
+            color: #1e293b;
+        }
+
+        .card-white {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.02), 0 1px 2px 0 rgba(0, 0, 0, 0.02);
+            border-radius: 1rem;
+        }
+
+        .card-white-hover:hover {
+            border-color: #cbd5e1;
+            box-shadow: 0 4px 12px -2px rgba(5, 150, 105, 0.08);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        .pb-safe {
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        .hide-scroll {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .hide-scroll::-webkit-scrollbar {
+            display: none;
+        }
+
+        @keyframes scanline {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(1000%); }
+        }
+
+        .animate-scanline {
+            animation: scanline 2.5s linear infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        .node-glow {
+            animation: pulse-glow 1.5s infinite ease-in-out;
+        }
+    </style>
+</head>
+
+<body class="m-0 p-0 flex justify-center bg-[#f4f4f8] text-slate-800 overflow-hidden antialiased selection:bg-emerald-200">
+
+    <!-- LOGIN SCREEN -->
+    <div id="loginScreen"
+        class="fixed inset-0 z-[100] flex items-center justify-center bg-[#f4f4f8] px-4 transition-all duration-300">
+        <div class="card-white w-full max-w-md p-8 rounded-3xl shadow-xl relative overflow-hidden bg-white border border-slate-200/80">
+            <!-- Decorative blur blobs -->
+            <div class="absolute -top-20 -right-20 w-48 h-48 bg-emerald-200/60 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute -bottom-20 -left-20 w-48 h-48 bg-yellow-200/60 rounded-full blur-3xl pointer-events-none"></div>
+
+            <div class="flex items-center gap-3 mb-6 relative z-10">
+                <div class="w-11 h-11 rounded-2xl bg-emerald-600 flex items-center justify-center text-white shadow-lg shadow-emerald-600/30">
+                    <i class="ph-bold ph-whatsapp-logo text-2xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-black text-slate-900 tracking-tight">ATSUGA</h1>
+                    <p class="text-xs text-emerald-600 font-bold uppercase tracking-wider">WhatsApp API & AI Gateway</p>
+                </div>
+            </div>
+
+            <h2 class="text-xl font-bold text-slate-900 mb-1">Selamat Datang</h2>
+            <p class="text-xs text-slate-500 mb-4">Masuk ke workspace Anda sebagai Super Admin / Admin</p>
+
+            <!-- Quick Credential Helper Pill -->
+            <div class="mb-5 p-3 rounded-2xl bg-slate-50 border border-slate-200 flex justify-between items-center text-xs">
+                <div>
+                    <span class="block font-bold text-slate-800 text-[11px]">Super Admin: <code class="text-purple-700">superadmin</code></span>
+                    <span class="block font-medium text-slate-500 text-[10px]">Admin 1-20: <code class="text-emerald-700">admin1</code> ... <code class="text-emerald-700">admin20</code></span>
+                </div>
+                <button type="button" onclick="openModal('viewAccounts')" class="text-xs text-emerald-600 font-bold hover:underline bg-emerald-50 px-2.5 py-1.5 rounded-lg border border-emerald-200">
+                    Daftar Akun
+                </button>
+            </div>
+
+            <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4 relative z-10">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">Username</label>
+                    <input type="text" id="username"
+                        class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-600 outline-none transition-all placeholder-slate-400"
+                        placeholder="superadmin atau admin1" value="superadmin" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">Password</label>
+                    <input type="password" id="password"
+                        class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-600 outline-none transition-all placeholder-slate-400"
+                        placeholder="••••••••" value="SuperAdminPass2026!" required>
+                </div>
+                <button type="submit" id="loginBtn"
+                    class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl px-4 py-3.5 text-sm transition-all mt-6 flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/30">
+                    <span>Sign In to Workspace</span>
+                    <i class="ph-bold ph-arrow-right text-base"></i>
+                </button>
+            </form>
+
+            <div class="mt-6 text-center text-xs text-slate-400 border-t border-slate-100 pt-4">
+                <span>Enterprise Baileys v6.7 & Multi-Admin RBAC Role</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APP WRAPPER -->
+    <div id="appScreen"
+        class="w-full h-screen flex overflow-hidden bg-[#f4f4f8] relative opacity-0 pointer-events-none transition-opacity duration-300 hidden">
+
+        <!-- SIDEBAR -->
+        <div id="sidebarOverlay" class="bg-slate-900/40 fixed inset-0 z-40 md:hidden hidden backdrop-blur-sm"
+            onclick="toggleSidebar()"></div>
+        <aside id="sidebar"
+            class="fixed md:relative inset-y-0 left-0 z-50 w-64 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out flex flex-col h-full bg-white border-r border-slate-200/80 shadow-sm">
+            
+            <!-- Brand & Top Button -->
+            <div class="p-6 border-b border-slate-100 flex-none space-y-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl bg-emerald-600 flex items-center justify-center text-white shadow-md shadow-emerald-600/30">
+                            <i class="ph-bold ph-whatsapp-logo text-xl"></i>
+                        </div>
+                        <div>
+                            <span class="text-base font-extrabold text-slate-900 tracking-tight block leading-none">ATSUGA</span>
+                            <span class="text-[10px] text-emerald-600 font-bold uppercase tracking-wider">Gateway v2.4</span>
+                        </div>
+                    </div>
+                    <button onclick="toggleSidebar()" class="md:hidden text-slate-400 hover:text-slate-700">
+                        <i class="ph ph-x text-lg"></i>
+                    </button>
+                </div>
+
+                <!-- Create Action Pill Button -->
+                <button onclick="openModal('addSession')" class="w-full bg-slate-50 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 border border-slate-200 hover:border-emerald-300 rounded-xl py-2.5 px-3 text-xs font-bold transition-all flex items-center justify-center gap-2">
+                    <i class="ph-bold ph-plus-circle text-base text-emerald-600"></i>
+                    <span>Connect Workspace</span>
+                </button>
+            </div>
+
+            <!-- Navigation Menu -->
+            <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1.5 hide-scroll" id="navMenu">
+                <!-- Injected via JS -->
+            </nav>
+
+            <!-- Sidebar Upgrade Card -->
+            <div class="px-4 py-3 flex-none">
+                <div class="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 text-center">
+                    <div class="w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center mx-auto mb-2 shadow-md shadow-emerald-500/30">
+                        <i class="ph-bold ph-crown text-sm"></i>
+                    </div>
+                    <p class="text-xs font-bold text-slate-900">Production Mode</p>
+                    <p class="text-[10px] text-slate-500 mt-0.5 mb-3">Real Gateway Active</p>
+                    <button onclick="setMenu('billing')" class="w-full border-2 border-emerald-600 text-emerald-700 hover:bg-emerald-600 hover:text-white font-bold rounded-xl py-1.5 text-xs transition-all">
+                        Server Health
+                    </button>
+                </div>
+            </div>
+
+            <!-- User Profile Bottom Bar -->
+            <div class="p-3 border-t border-slate-100 flex-none bg-white" id="sidebarUserProfile">
+                <!-- Injected dynamically via renderUserProfile() -->
+            </div>
+        </aside>
+
+        <!-- RIGHT CONTENT WRAPPER -->
+        <main class="flex-1 flex flex-col overflow-hidden relative w-full bg-[#f4f4f8]">
+            <!-- Top Header Bar -->
+            <header class="h-16 flex-none bg-white border-b border-slate-200/80 flex items-center justify-between px-4 sm:px-8 z-30 sticky top-0 shadow-sm">
+                <div class="flex items-center gap-3">
+                    <button onclick="toggleSidebar()" class="md:hidden w-9 h-9 flex items-center justify-center text-slate-600 hover:text-slate-900 rounded-xl bg-slate-100">
+                        <i class="ph ph-list text-xl"></i>
+                    </button>
+                    <!-- Quick Search Input Bar -->
+                    <div class="hidden sm:flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-1.5 w-72 focus-within:border-emerald-600 focus-within:bg-white transition-all">
+                        <i class="ph-bold ph-magnifying-glass text-slate-400 text-sm"></i>
+                        <input type="text" placeholder="Ketik pencarian cepat..." class="bg-transparent text-xs text-slate-800 outline-none w-full placeholder-slate-400">
+                    </div>
+                </div>
+
+                <!-- Right Header Actions (Dynamically renders Reset State ONLY for Super Admin) -->
+                <div class="flex items-center gap-3" id="headerRightActions">
+                    <!-- Injected dynamically via renderHeaderActions() -->
+                </div>
+            </header>
+
+            <!-- Dynamic Content Area -->
+            <div class="flex-1 overflow-y-auto p-4 lg:p-8 pb-safe relative" id="mainContent">
+                <!-- Injected via JS -->
+            </div>
+        </main>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast"
+        class="fixed top-4 right-4 z-[200] transform transition-all duration-300 translate-y-[-150%] opacity-0 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-xl bg-white text-sm font-medium max-w-sm border border-slate-200">
+        <i id="toastIcon" class="text-xl"></i>
+        <span id="toastMsg" class="text-slate-800 text-xs sm:text-sm font-semibold"></span>
+    </div>
+
+    <!-- CENTRAL MODAL OVERLAY -->
+    <div id="modalOverlay"
+        class="fixed inset-0 z-[150] bg-slate-900/40 backdrop-blur-sm hidden flex items-center justify-center p-4 opacity-0 transition-all duration-200">
+        <div id="modalContent"
+            class="bg-white w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden transform scale-95 transition-transform duration-200 border border-slate-200">
+            <!-- Injected via JS -->
+        </div>
+    </div>
+
+    <script>
+        /* ================= Users Credentials Database (Super Admin + 20 Admins) ================= */
+        const usersDB = [
+            { username: 'superadmin', password: 'SuperAdminPass2026!', name: 'Super Admin', email: 'superadmin@atsuga.io', role: 'superadmin' },
+            { username: 'admin1', password: 'AdminPass101!', name: 'Admin One', email: 'admin1@atsuga.io', role: 'admin' },
+            { username: 'admin2', password: 'AdminPass102!', name: 'Admin Two', email: 'admin2@atsuga.io', role: 'admin' },
+            { username: 'admin3', password: 'AdminPass103!', name: 'Admin Three', email: 'admin3@atsuga.io', role: 'admin' },
+            { username: 'admin4', password: 'AdminPass104!', name: 'Admin Four', email: 'admin4@atsuga.io', role: 'admin' },
+            { username: 'admin5', password: 'AdminPass105!', name: 'Admin Five', email: 'admin5@atsuga.io', role: 'admin' },
+            { username: 'admin6', password: 'AdminPass106!', name: 'Admin Six', email: 'admin6@atsuga.io', role: 'admin' },
+            { username: 'admin7', password: 'AdminPass107!', name: 'Admin Seven', email: 'admin7@atsuga.io', role: 'admin' },
+            { username: 'admin8', password: 'AdminPass108!', name: 'Admin Eight', email: 'admin8@atsuga.io', role: 'admin' },
+            { username: 'admin9', password: 'AdminPass109!', name: 'Admin Nine', email: 'admin9@atsuga.io', role: 'admin' },
+            { username: 'admin10', password: 'AdminPass110!', name: 'Admin Ten', email: 'admin10@atsuga.io', role: 'admin' },
+            { username: 'admin11', password: 'AdminPass111!', name: 'Admin Eleven', email: 'admin11@atsuga.io', role: 'admin' },
+            { username: 'admin12', password: 'AdminPass112!', name: 'Admin Twelve', email: 'admin12@atsuga.io', role: 'admin' },
+            { username: 'admin13', password: 'AdminPass113!', name: 'Admin Thirteen', email: 'admin13@atsuga.io', role: 'admin' },
+            { username: 'admin14', password: 'AdminPass114!', name: 'Admin Fourteen', email: 'admin14@atsuga.io', role: 'admin' },
+            { username: 'admin15', password: 'AdminPass115!', name: 'Admin Fifteen', email: 'admin15@atsuga.io', role: 'admin' },
+            { username: 'admin16', password: 'AdminPass116!', name: 'Admin Sixteen', email: 'admin16@atsuga.io', role: 'admin' },
+            { username: 'admin17', password: 'AdminPass117!', name: 'Admin Seventeen', email: 'admin17@atsuga.io', role: 'admin' },
+            { username: 'admin18', password: 'AdminPass118!', name: 'Admin Eighteen', email: 'admin18@atsuga.io', role: 'admin' },
+            { username: 'admin19', password: 'AdminPass119!', name: 'Admin Nineteen', email: 'admin19@atsuga.io', role: 'admin' },
+            { username: 'admin20', password: 'AdminPass120!', name: 'Admin Twenty', email: 'admin20@atsuga.io', role: 'admin' }
+        ];
+
+        /* ================= Clean Production State ================= */
+        const cleanState = {
+            activeMenu: 'dashboard',
+            stats: { totalSessions: 0, messagesToday: 0, successRate: "100%", apiCalls: 0 },
+            sessions: [],
+            apikeys: [],
+            webhooks: [],
+            contacts: [],
+            broadcasts: [],
+            integrations: [],
+            automationNodes: [
+                { id: 'n1', type: 'trigger', title: 'Pesan Masuk (Trigger)', desc: 'Saat pesan WA baru diterima', icon: 'ph-lightning', color: 'emerald' },
+                { id: 'n2', type: 'condition', title: 'Cek Kata Kunci', desc: 'Contains: "harga", "promo", "order"', icon: 'ph-git-branch', color: 'blue' },
+                { id: 'n3', type: 'ai', title: 'AI Agent Auto-Response', desc: 'OpenAI gpt-4o dengan prompt CS', icon: 'ph-robot', color: 'emerald' },
+                { id: 'n4', type: 'sheets', title: 'Simpan ke Google Sheets', desc: 'Log prospek ke spreadsheet Leads', icon: 'ph-table', color: 'emerald' }
+            ],
+            aiConfig: {
+                provider: 'openai',
+                model: 'gpt-4o',
+                apiKey: '',
+                systemPrompt: 'Kamu adalah ATSUGA Bot, asisten layanan pelanggan yang sangat ramah, profesional, dan cepat tanggap. Selalu jawab pertanyaan pelanggan dalam Bahasa Indonesia yang sopan.',
+                temperature: 0.7
+            },
+            sandboxChat: []
+        };
+
+        let state = loadState();
+        let chartInstance = null;
+
+        function getCurrentUser() {
+            try {
+                const u = localStorage.getItem('atsuga_user');
+                if (u) return JSON.parse(u);
+            } catch (e) {}
+            return usersDB[0]; // fallback to superadmin
+        }
+
+        function loadState() {
+            try {
+                const saved = localStorage.getItem('atsuga_state_prod_v1');
+                if (saved) return JSON.parse(saved);
+            } catch (e) {
+                console.error('Failed to parse state:', e);
+            }
+            return JSON.parse(JSON.stringify(cleanState));
+        }
+
+        function saveState() {
+            localStorage.setItem('atsuga_state_prod_v1', JSON.stringify(state));
+        }
+
+        function resetToCleanState() {
+            const currentUser = getCurrentUser();
+            if (currentUser.role !== 'superadmin') {
+                showToast('Hanya Super Admin yang diizinkan melakukan Reset State!', 'error');
+                return;
+            }
+
+            if (confirm('Apakah Anda yakin ingin mengosongkan seluruh data workspace untuk membuat instalasi bersih? (Tindakan ini hanya dapat dilakukan oleh Super Admin)')) {
+                state = JSON.parse(JSON.stringify(cleanState));
+                saveState();
+                renderContent(state.activeMenu);
+                showToast('Data workspace berhasil dibersihkan (Clean Production State)', 'success');
+            }
+        }
+
+        const menus = [
+            { id: 'dashboard', label: 'Home Dashboard', icon: 'ph-house-line' },
+            { id: 'sessions', label: 'WhatsApp Sessions', icon: 'ph-device-mobile' },
+            { id: 'api', label: 'API Keys', icon: 'ph-key' },
+            { id: 'webhook', label: 'Webhook Logs', icon: 'ph-plugs' },
+            { id: 'contacts', label: 'Contacts Database', icon: 'ph-users' },
+            { id: 'broadcast', label: 'Campaign Broadcast', icon: 'ph-paper-plane-tilt' },
+            { id: 'sheets', label: 'Bot Integrations', icon: 'ph-plugs-connected' },
+            { type: 'divider' },
+            { id: 'automation', label: 'Automation Builder', icon: 'ph-git-merge' },
+            { id: 'ai', label: 'AI Configurator', icon: 'ph-robot' },
+            { id: 'billing', label: 'Billing & Usage', icon: 'ph-credit-card' }
+        ];
+
+        /* ================= Core Functions ================= */
+        function initApp() {
+            renderSidebar();
+            const isAuth = localStorage.getItem('atsuga_auth') === 'true';
+            const loginScreen = document.getElementById('loginScreen');
+            const appScreen = document.getElementById('appScreen');
+
+            if (isAuth) {
+                showApp();
+            } else {
+                if (loginScreen) {
+                    loginScreen.style.display = 'flex';
+                    loginScreen.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
+                }
+                if (appScreen) {
+                    appScreen.style.display = 'none';
+                    appScreen.classList.add('hidden', 'opacity-0', 'pointer-events-none');
+                }
+            }
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const u = document.getElementById('username').value.trim().toLowerCase();
+            const p = document.getElementById('password').value.trim();
+
+            const foundUser = usersDB.find(user => user.username.toLowerCase() === u && user.password === p);
+
+            if (foundUser) {
+                localStorage.setItem('atsuga_auth', 'true');
+                localStorage.setItem('atsuga_user', JSON.stringify(foundUser));
+                showToast(`Selamat Datang, ${foundUser.name} (${foundUser.role === 'superadmin' ? 'Super Admin' : 'Admin'})!`, 'success');
+                showApp();
+            } else {
+                showToast('Username atau Password salah! Periksa daftar akun di CREDENTIALS.md.', 'error');
+            }
+        }
+
+        function showApp() {
+            const loginScreen = document.getElementById('loginScreen');
+            const appScreen = document.getElementById('appScreen');
+            
+            if (loginScreen) {
+                loginScreen.style.display = 'none';
+                loginScreen.classList.add('hidden', 'opacity-0', 'pointer-events-none');
+            }
+            
+            if (appScreen) {
+                appScreen.style.display = 'flex';
+                appScreen.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
+            }
+
+            const btn = document.getElementById('loginBtn');
+            if (btn) btn.innerHTML = `<span>Sign In to Workspace</span><i class="ph-bold ph-arrow-right text-base"></i>`;
+
+            renderHeaderActions();
+            renderUserProfile();
+            renderContent(state.activeMenu);
+        }
+
+        function handleLogout() {
+            localStorage.removeItem('atsuga_auth');
+            localStorage.removeItem('atsuga_user');
+            
+            const loginScreen = document.getElementById('loginScreen');
+            const appScreen = document.getElementById('appScreen');
+            
+            if (appScreen) {
+                appScreen.style.display = 'none';
+                appScreen.classList.add('hidden', 'opacity-0', 'pointer-events-none');
+            }
+            
+            if (loginScreen) {
+                loginScreen.style.display = 'flex';
+                loginScreen.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
+            }
+
+            const btn = document.getElementById('loginBtn');
+            if (btn) btn.innerHTML = `<span>Sign In to Workspace</span><i class="ph-bold ph-arrow-right text-base"></i>`;
+
+            showToast('Anda telah logout dari workspace', 'info');
+        }
+
+        function renderHeaderActions() {
+            const currentUser = getCurrentUser();
+            const container = document.getElementById('headerRightActions');
+            if (!container) return;
+
+            let html = '';
+            
+            // Render Reset State Button ONLY if Super Admin
+            if (currentUser.role === 'superadmin') {
+                html += `
+                    <button onclick="resetToCleanState()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold px-3 py-1.5 rounded-xl transition-all border border-slate-200 flex items-center gap-1">
+                        <i class="ph-bold ph-arrows-counter-clockwise text-purple-600"></i>
+                        <span>Reset State</span>
+                    </button>
+                `;
+            }
+
+            html += `
+                <button onclick="showToast('Gateway System Ready & Healthy', 'success')" class="w-9 h-9 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-600 hover:text-emerald-600 transition-colors relative">
+                    <i class="ph-bold ph-bell text-base"></i>
+                    <span class="w-2 h-2 rounded-full bg-emerald-600 absolute top-2 right-2 ring-2 ring-white"></span>
+                </button>
+                
+                <button onclick="openModal('addSession')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs transition-all shadow-md shadow-emerald-600/25 flex items-center gap-2">
+                    <i class="ph-bold ph-record text-sm"></i>
+                    <span>+ Connect WA</span>
+                </button>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        function renderUserProfile() {
+            const currentUser = getCurrentUser();
+            const container = document.getElementById('sidebarUserProfile');
+            if (!container) return;
+
+            const initials = currentUser.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+            const isSuper = currentUser.role === 'superadmin';
+
+            container.innerHTML = `
+                <div class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 transition-colors group cursor-pointer" onclick="handleLogout()">
+                    <div class="w-9 h-9 rounded-full ${isSuper ? 'bg-purple-100 text-purple-700 border-purple-200' : 'bg-emerald-100 text-emerald-700 border-emerald-200'} border flex items-center justify-center font-bold text-xs">
+                        ${initials}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-1.5">
+                            <p class="text-xs font-bold text-slate-900 truncate">${currentUser.name}</p>
+                            <span class="text-[9px] px-1.5 py-0.2 rounded font-extrabold ${isSuper ? 'bg-purple-100 text-purple-700' : 'bg-emerald-100 text-emerald-700'}">
+                                ${isSuper ? 'Super' : 'Admin'}
+                            </span>
+                        </div>
+                        <p class="text-[10px] text-slate-500 truncate">${currentUser.email}</p>
+                    </div>
+                    <i class="ph-bold ph-sign-out text-slate-400 group-hover:text-red-500 transition-colors text-base" title="Logout"></i>
+                </div>
+            `;
+        }
+
+        function toggleSidebar() {
+            const sb = document.getElementById('sidebar');
+            const ov = document.getElementById('sidebarOverlay');
+            sb.classList.toggle('-translate-x-full');
+            ov.classList.toggle('hidden');
+        }
+
+        function showToast(msg, type = 'info') {
+            const toast = document.getElementById('toast');
+            const icon = document.getElementById('toastIcon');
+            document.getElementById('toastMsg').innerText = msg;
+
+            let iconClass = 'ph-fill ph-info text-blue-500';
+            let borderClass = 'border-emerald-100 shadow-emerald-500/10';
+
+            if (type === 'success') {
+                iconClass = 'ph-fill ph-check-circle text-emerald-500';
+            } else if (type === 'error') {
+                iconClass = 'ph-fill ph-warning-circle text-red-500';
+            }
+
+            toast.className = `fixed top-4 right-4 z-[200] transform transition-all duration-300 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-xl bg-white text-sm font-medium max-w-sm border ${borderClass}`;
+            icon.className = iconClass;
+
+            toast.classList.remove('translate-y-[-150%]', 'opacity-0');
+            setTimeout(() => toast.classList.add('translate-y-[-150%]', 'opacity-0'), 3200);
+        }
+
+        function setMenu(id) {
+            state.activeMenu = id;
+            saveState();
+            renderSidebar();
+            renderContent(id);
+            if (window.innerWidth < 768) {
+                const sb = document.getElementById('sidebar');
+                const ov = document.getElementById('sidebarOverlay');
+                if (sb && !sb.classList.contains('-translate-x-full')) {
+                    sb.classList.add('-translate-x-full');
+                    ov.classList.add('hidden');
+                }
+            }
+        }
+
+        /* ================= Render Sidebar ================= */
+        function renderSidebar() {
+            const html = menus.map(m => {
+                if (m.type === 'divider') return `<div class="h-px bg-slate-100 my-2 mx-2"></div>`;
+                const active = state.activeMenu === m.id ? 'bg-emerald-600 text-white font-bold shadow-md shadow-emerald-600/25' : 'text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 font-semibold';
+                return `
+                    <button onclick="setMenu('${m.id}')" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all text-xs sm:text-sm ${active}">
+                        <i class="${m.icon} text-lg ${state.activeMenu === m.id ? 'text-white' : 'text-slate-400'}"></i>
+                        <span>${m.label}</span>
+                    </button>
+                `;
+            }).join('');
+            document.getElementById('navMenu').innerHTML = html;
+        }
+
+        /* ================= Content Renderers ================= */
+        function renderContent(menuId) {
+            const container = document.getElementById('mainContent');
+            let content = '';
+
+            if (menuId === 'dashboard') {
+                const connectedCount = state.sessions.filter(s => s.status === 'Connected').length;
+                content = `
+                    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                        <!-- Main Left/Middle Area (3 cols) -->
+                        <div class="lg:col-span-3 space-y-6">
+                            
+                            <!-- Hero Yellow Banner -->
+                            <div class="bg-[#fef08a] rounded-3xl p-6 sm:p-8 relative overflow-hidden shadow-sm flex flex-col justify-between min-h-[160px] border border-yellow-200">
+                                <div class="absolute -bottom-6 -left-6 w-24 h-24 bg-emerald-600 rounded-3xl rotate-12 pointer-events-none"></div>
+                                <div class="absolute -top-10 -right-10 w-32 h-32 bg-emerald-500 rounded-full pointer-events-none opacity-90"></div>
+                                
+                                <div class="relative z-10 text-center max-w-lg mx-auto">
+                                    <h2 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Getting Started</h2>
+                                    <p class="text-xs sm:text-sm text-slate-700 mt-1 font-medium">Langkah Awal: Hubungkan Perangkat WhatsApp & Konfigurasi Backend Server Node.js untuk Real Production Run!</p>
+                                    <button onclick="openModal('addSession')" class="mt-4 bg-white hover:bg-slate-50 text-slate-900 border border-slate-200 px-5 py-2 rounded-xl text-xs font-bold shadow-sm transition-all inline-flex items-center gap-2">
+                                        <i class="ph-bold ph-plus-circle text-emerald-600"></i>
+                                        <span>Hubungkan Device Pertama</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Feature Quick Status Cards -->
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <div class="card-white p-5 rounded-2xl text-center space-y-2 card-white-hover cursor-pointer" onclick="setMenu('sessions')">
+                                    <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto text-xl">
+                                        <i class="ph-bold ph-device-mobile"></i>
+                                    </div>
+                                    <h4 class="text-xs font-bold text-slate-900">Multi-Device WA</h4>
+                                    <p class="text-[11px] text-slate-500">${connectedCount} Perangkat Terhubung</p>
+                                    <span class="inline-block px-3 py-0.5 rounded-full text-[10px] font-bold ${connectedCount > 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}">${connectedCount > 0 ? 'Ready' : 'Pending Link'}</span>
+                                </div>
+
+                                <div class="card-white p-5 rounded-2xl text-center space-y-2 card-white-hover cursor-pointer" onclick="setMenu('ai')">
+                                    <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto text-xl">
+                                        <i class="ph-bold ph-robot"></i>
+                                    </div>
+                                    <h4 class="text-xs font-bold text-slate-900">AI Chat BOT</h4>
+                                    <p class="text-[11px] text-slate-500">${state.aiConfig.apiKey ? 'API Key Configured' : 'Set API Key LLM'}</p>
+                                    <span class="inline-block px-3 py-0.5 rounded-full text-[10px] font-bold ${state.aiConfig.apiKey ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">${state.aiConfig.apiKey ? 'Active' : 'Setup Required'}</span>
+                                </div>
+
+                                <div class="card-white p-5 rounded-2xl text-center space-y-2 card-white-hover cursor-pointer" onclick="setMenu('sheets')">
+                                    <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto text-xl">
+                                        <i class="ph-bold ph-plugs-connected"></i>
+                                    </div>
+                                    <h4 class="text-xs font-bold text-slate-900">Bot Integrations</h4>
+                                    <p class="text-[11px] text-slate-500">${state.integrations?.length || 0} integrasi terdaftar</p>
+                                    <span class="inline-block px-3 py-0.5 rounded-full text-[10px] font-bold ${(state.integrations?.filter(i=>i.enabled)?.length || 0) > 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}">${(state.integrations?.filter(i=>i.enabled)?.length || 0) > 0 ? (state.integrations.filter(i=>i.enabled).length + ' Aktif') : 'Belum Ada'}</span>
+                                </div>
+                            </div>
+
+                            <!-- Gateway Metrics Section -->
+                            <div>
+                                <h3 class="text-base font-extrabold text-slate-900 mb-3">Daily Gateway Metrics</h3>
+                                <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                    <div class="card-white p-5 rounded-2xl text-center card-white-hover">
+                                        <i class="ph-bold ph-chats text-emerald-600 text-xl mb-1"></i>
+                                        <h4 class="text-xl font-extrabold text-slate-900">${state.stats.messagesToday.toLocaleString()}</h4>
+                                        <p class="text-[11px] font-medium text-slate-500 mt-0.5">Overall Messages</p>
+                                    </div>
+                                    <div class="card-white p-5 rounded-2xl text-center card-white-hover">
+                                        <i class="ph-bold ph-clock text-emerald-600 text-xl mb-1"></i>
+                                        <h4 class="text-xl font-extrabold text-slate-900">${connectedCount} Devices</h4>
+                                        <p class="text-[11px] font-medium text-slate-500 mt-0.5">Active Devices</p>
+                                    </div>
+                                    <div class="card-white p-5 rounded-2xl text-center card-white-hover">
+                                        <i class="ph-bold ph-check-circle text-emerald-600 text-xl mb-1"></i>
+                                        <h4 class="text-xl font-extrabold text-slate-900">${state.stats.successRate}</h4>
+                                        <p class="text-[11px] font-medium text-slate-500 mt-0.5">Success Rate</p>
+                                    </div>
+                                    <div class="card-white p-5 rounded-2xl text-center card-white-hover">
+                                        <i class="ph-bold ph-code text-emerald-600 text-xl mb-1"></i>
+                                        <h4 class="text-xl font-extrabold text-slate-900">${state.stats.apiCalls.toLocaleString()}</h4>
+                                        <p class="text-[11px] font-medium text-slate-500 mt-0.5">API Calls Total</p>
+                                    </div>
+                                    <div class="card-white p-5 rounded-2xl text-center card-white-hover">
+                                        <i class="ph-bold ph-users text-emerald-600 text-xl mb-1"></i>
+                                        <h4 class="text-xl font-extrabold text-slate-900">${state.contacts.length}</h4>
+                                        <p class="text-[11px] font-medium text-slate-500 mt-0.5">Saved Contacts</p>
+                                    </div>
+                                    <div class="card-white p-5 rounded-2xl text-center card-white-hover">
+                                        <i class="ph-bold ph-cpu text-emerald-600 text-xl mb-1"></i>
+                                        <h4 class="text-xl font-extrabold text-slate-900">0 Tokens</h4>
+                                        <p class="text-[11px] font-medium text-slate-500 mt-0.5">AI Tokens Used</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Analytics Traffic Chart -->
+                            <div class="card-white p-6 rounded-2xl">
+                                <div class="flex justify-between items-center mb-4">
+                                    <div>
+                                        <h3 class="font-extrabold text-slate-900 text-base">Traffic Volume (24 Jam)</h3>
+                                        <p class="text-xs text-slate-500">Volume statistik pesan terkirim vs diterima</p>
+                                    </div>
+                                    <span class="px-3 py-1 rounded-full text-xs bg-emerald-50 text-emerald-700 font-bold">Realtime Engine</span>
+                                </div>
+                                <div class="min-h-[260px] relative">
+                                    <canvas id="trafficChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Widget Sidebar -->
+                        <div class="space-y-6">
+                            
+                            <!-- Calendar Widget -->
+                            <div class="card-white p-5 rounded-3xl">
+                                <div class="flex justify-between items-center mb-4 text-xs font-bold text-slate-800">
+                                    <span>Jul 2026</span>
+                                    <button onclick="showToast('Date Filter Reset', 'info')" class="text-slate-400 hover:text-emerald-600 text-[11px]">Reset Filter</button>
+                                </div>
+
+                                <div class="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-slate-400 mb-2">
+                                    <span>SUN</span><span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span>
+                                </div>
+
+                                <div class="grid grid-cols-7 gap-1 text-center text-xs font-semibold text-slate-700">
+                                    <span class="text-slate-300 py-1">28</span>
+                                    <span class="text-slate-300 py-1">29</span>
+                                    <span class="text-slate-300 py-1">30</span>
+                                    <span class="py-1">1</span><span class="py-1">2</span><span class="py-1">3</span><span class="py-1">4</span>
+                                    <span class="py-1">5</span><span class="py-1">6</span><span class="py-1">7</span><span class="py-1">8</span><span class="py-1">9</span><span class="py-1">10</span><span class="py-1">11</span>
+                                    <span class="py-1">12</span><span class="py-1">13</span><span class="py-1">14</span><span class="py-1">15</span><span class="py-1">16</span><span class="py-1">17</span><span class="py-1">18</span>
+                                    <span class="py-1">19</span><span class="py-1">20</span><span class="py-1">21</span><span class="py-1">22</span><span class="py-1">23</span><span class="py-1">24</span><span class="py-1">25</span>
+                                    <span class="py-1 bg-emerald-600 text-white rounded-lg font-bold shadow-md shadow-emerald-500/30">26</span>
+                                    <span class="py-1">27</span><span class="py-1">28</span><span class="py-1">29</span><span class="py-1">30</span><span class="py-1">31</span>
+                                </div>
+                            </div>
+
+                            <!-- Active WhatsApp Devices Widget -->
+                            <div class="card-white p-5 rounded-3xl space-y-3">
+                                <div class="flex justify-between items-center">
+                                    <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Gateway Nodes</h4>
+                                    <button onclick="setMenu('sessions')" class="text-xs text-emerald-600 font-bold hover:underline">View All</button>
+                                </div>
+
+                                <div class="space-y-2.5">
+                                    ${state.sessions.length > 0 ? state.sessions.map(s => `
+                                        <div class="p-3 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-8 h-8 rounded-xl ${s.status === 'Connected' ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-500'} flex items-center justify-center text-sm font-bold">
+                                                    <i class="ph-bold ph-whatsapp-logo"></i>
+                                                </div>
+                                                <div>
+                                                    <h5 class="text-xs font-bold text-slate-900">${s.name}</h5>
+                                                    <p class="text-[10px] text-slate-500 font-mono">${s.phone}</p>
+                                                </div>
+                                            </div>
+                                            <span class="w-2.5 h-2.5 rounded-full ${s.status === 'Connected' ? 'bg-emerald-500' : 'bg-red-400'}"></span>
+                                        </div>
+                                    `).join('') : `
+                                        <div class="text-center py-6 text-slate-400 text-xs">
+                                            Belum ada device WA terhubung.
+                                        </div>
+                                    `}
+                                </div>
+                            </div>
+
+                            <!-- Recent Webhooks Log Widget -->
+                            <div class="card-white p-5 rounded-3xl space-y-3">
+                                <div class="flex justify-between items-center">
+                                    <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Recent Webhooks</h4>
+                                    <button onclick="setMenu('webhook')" class="text-xs text-emerald-600 font-bold hover:underline">View All</button>
+                                </div>
+                                <div class="space-y-2">
+                                    ${state.webhooks.length > 0 ? state.webhooks.slice(0, 3).map(wh => `
+                                        <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between text-xs cursor-pointer hover:bg-emerald-50/50" onclick="openModal('viewWebhookPayload', '${wh.id}')">
+                                            <div class="min-w-0 flex-1">
+                                                <p class="font-bold text-slate-800 text-[11px] truncate">${wh.event}</p>
+                                                <p class="text-[10px] text-slate-400">${wh.latency} • ${wh.time}</p>
+                                            </div>
+                                            <span class="px-2 py-0.5 rounded text-[9px] font-bold ${wh.status === 200 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}">${wh.status}</span>
+                                        </div>
+                                    `).join('') : `
+                                        <div class="text-center py-6 text-slate-400 text-xs">
+                                            Belum ada log callback.
+                                        </div>
+                                    `}
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                `;
+                container.innerHTML = content;
+                setTimeout(initDashboardChart, 50);
+            }
+            else if (menuId === 'sessions') {
+                content = `
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+                        <div>
+                            <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">WhatsApp Sessions</h2>
+                            <p class="text-slate-500 text-xs sm:text-sm mt-1">Kelola instance Baileys & koneksi perangkat WA multi-device.</p>
+                        </div>
+                        <button onclick="openModal('addSession')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 shadow-md shadow-emerald-600/25">
+                            <i class="ph-bold ph-plus"></i> Hubungkan Device Baru
+                        </button>
+                    </div>
+
+                    ${state.sessions.length > 0 ? `
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            ${state.sessions.map(s => `
+                                <div class="card-white p-6 rounded-2xl relative overflow-hidden card-white-hover">
+                                    <div class="flex justify-between items-start mb-4">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-12 h-12 rounded-2xl ${s.status === 'Connected' ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20' : 'bg-slate-100 text-slate-400'} flex items-center justify-center">
+                                                <i class="ph-fill ph-whatsapp-logo text-2xl"></i>
+                                            </div>
+                                            <div>
+                                                <h3 class="font-extrabold text-slate-900 text-sm sm:text-base">${s.name}</h3>
+                                                <p class="text-xs text-slate-500 font-mono mt-0.5">${s.phone}</p>
+                                            </div>
+                                        </div>
+                                        <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold ${s.status === 'Connected' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'} flex items-center gap-1.5">
+                                            <span class="w-1.5 h-1.5 rounded-full ${s.status === 'Connected' ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}"></span>
+                                            ${s.status}
+                                        </span>
+                                    </div>
+
+                                    <div class="grid grid-cols-2 gap-2 text-xs py-3 my-2 border-y border-slate-100 text-slate-500">
+                                        <div>
+                                            <span class="block text-[10px] text-slate-400 uppercase font-bold">Baterai HP</span>
+                                            <span class="text-slate-800 font-bold flex items-center gap-1 mt-0.5">
+                                                <i class="ph-bold ph-battery-charging text-emerald-500"></i> ${s.battery}%
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <span class="block text-[10px] text-slate-400 uppercase font-bold">Aktivitas Terakhir</span>
+                                            <span class="text-slate-800 font-bold mt-0.5 block">${s.lastSeen}</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex gap-2 mt-4">
+                                        ${s.status === 'Connected' ? `
+                                            <button onclick="toggleSessionStatus('${s.id}')" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-2 rounded-xl text-xs font-bold transition-all">
+                                                Putuskan Koneksi
+                                            </button>
+                                        ` : `
+                                            <button onclick="toggleSessionStatus('${s.id}')" class="flex-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 py-2 rounded-xl text-xs font-bold transition-all">
+                                                Sambungkan Ulang
+                                            </button>
+                                        `}
+                                        <button onclick="deleteSession('${s.id}')" class="w-9 h-9 bg-slate-100 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-xl flex items-center justify-center transition-all">
+                                            <i class="ph-bold ph-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : `
+                        <div class="card-white p-12 text-center border-dashed rounded-3xl">
+                            <i class="ph-bold ph-device-mobile text-5xl text-slate-300 mb-3 block"></i>
+                            <h4 class="font-extrabold text-slate-900 text-base">Belum Ada Sesi WhatsApp Terhubung</h4>
+                            <p class="text-xs text-slate-500 mt-1 mb-6 max-w-sm mx-auto">Klik tombol di bawah ini untuk membuka QR Code scanner dan hubungkan perangkat HP pertama Anda.</p>
+                            <button onclick="openModal('addSession')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5 py-2.5 rounded-xl text-xs shadow-md shadow-emerald-600/25 inline-flex items-center gap-2">
+                                <i class="ph-bold ph-plus text-base"></i> Hubungkan Device Baru
+                            </button>
+                        </div>
+                    `}
+                `;
+                container.innerHTML = content;
+            }
+            else if (menuId === 'api') {
+                content = `
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+                        <div>
+                            <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">API Key Management</h2>
+                            <p class="text-slate-500 text-xs sm:text-sm mt-1">Buat dan kelola token autentikasi REST API Gateway.</p>
+                        </div>
+                        <button onclick="openModal('addApiKey')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 shadow-md shadow-emerald-600/25">
+                            <i class="ph-bold ph-key"></i> Generate API Key Baru
+                        </button>
+                    </div>
+
+                    <div class="card-white rounded-2xl overflow-hidden">
+                        <div class="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+                            <h3 class="font-extrabold text-slate-900 text-sm">Daftar API Key Aktif</h3>
+                            <span class="text-xs text-slate-500 font-medium">${state.apikeys.length} Secret Keys</span>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs sm:text-sm">
+                                <thead class="bg-slate-50 text-slate-500 text-[11px] uppercase tracking-wider font-bold">
+                                    <tr>
+                                        <th class="px-6 py-3.5">Nama Token</th>
+                                        <th class="px-6 py-3.5">Secret Key</th>
+                                        <th class="px-6 py-3.5">Dibuat Pada</th>
+                                        <th class="px-6 py-3.5">Status</th>
+                                        <th class="px-6 py-3.5 text-right">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    ${state.apikeys.length > 0 ? state.apikeys.map(k => `
+                                        <tr class="hover:bg-slate-50/50 transition-colors">
+                                            <td class="px-6 py-4 text-slate-900 font-bold">${k.name}</td>
+                                            <td class="px-6 py-4 font-mono text-xs text-emerald-700 font-bold">
+                                                <div class="flex items-center gap-2">
+                                                    <span>${k.key}</span>
+                                                    <button onclick="copyToClipboard('${k.key}')" class="text-slate-400 hover:text-emerald-600 p-1"><i class="ph-bold ph-copy"></i></button>
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4 text-slate-500">${k.created}</td>
+                                            <td class="px-6 py-4">
+                                                <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-700">Active</span>
+                                            </td>
+                                            <td class="px-6 py-4 text-right">
+                                                <button onclick="deleteApiKey('${k.id}')" class="text-red-500 hover:text-red-600 hover:underline text-xs font-bold">Revoke</button>
+                                            </td>
+                                        </tr>
+                                    `).join('') : `
+                                        <tr>
+                                            <td colspan="5" class="py-12 text-center text-slate-400 text-xs">
+                                                Belum ada API Key tersimpan. Klik <button onclick="openModal('addApiKey')" class="text-emerald-600 font-bold underline">Generate API Key Baru</button> untuk membuat token REST API.
+                                            </td>
+                                        </tr>
+                                    `}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML = content;
+            }
+            else if (menuId === 'webhook') {
+                content = `
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+                        <div>
+                            <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Webhook Live Logs</h2>
+                            <p class="text-slate-500 text-xs sm:text-sm mt-1">Pemantauan realtime event callback pesan masuk dan status sistem.</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="simulateIncomingWebhook()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 shadow-md shadow-emerald-600/25">
+                                <i class="ph-bold ph-lightning"></i> Kirim Payload Test
+                            </button>
+                            <button onclick="clearWebhooks()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all">
+                                Clear Logs
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="card-white rounded-2xl overflow-hidden">
+                        <div class="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+                            <h3 class="font-extrabold text-slate-900 text-sm">Log Callback Terkini</h3>
+                            <span class="text-xs text-emerald-600 font-bold flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span> Streaming</span>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs sm:text-sm">
+                                <thead class="bg-slate-50 text-slate-500 text-[11px] uppercase tracking-wider font-bold">
+                                    <tr>
+                                        <th class="px-6 py-3.5">Event Name</th>
+                                        <th class="px-6 py-3.5">Target URL</th>
+                                        <th class="px-6 py-3.5">HTTP Status</th>
+                                        <th class="px-6 py-3.5">Latency</th>
+                                        <th class="px-6 py-3.5">Waktu</th>
+                                        <th class="px-6 py-3.5 text-right">Payload</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 font-mono">
+                                    ${state.webhooks.length > 0 ? state.webhooks.map(wh => `
+                                        <tr class="hover:bg-slate-50/50 transition-colors">
+                                            <td class="px-6 py-4 text-emerald-700 font-bold font-sans">${wh.event}</td>
+                                            <td class="px-6 py-4 text-slate-600 text-xs truncate max-w-xs">${wh.url}</td>
+                                            <td class="px-6 py-4 font-sans">
+                                                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${wh.status === 200 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}">
+                                                    ${wh.status} ${wh.status === 200 ? 'OK' : 'FAIL'}
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4 text-slate-500 text-xs">${wh.latency}</td>
+                                            <td class="px-6 py-4 text-slate-500 text-xs font-sans">${wh.time}</td>
+                                            <td class="px-6 py-4 text-right font-sans">
+                                                <button onclick="openModal('viewWebhookPayload', '${wh.id}')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold px-3 py-1.5 rounded-xl transition-colors">
+                                                    View JSON
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    `).join('') : `
+                                        <tr>
+                                            <td colspan="6" class="py-12 text-center text-slate-400 text-xs">
+                                                Belum ada log callback webhook. Klik "Kirim Payload Test" atau jalankan server backend untuk menerima callback otomatis.
+                                            </td>
+                                        </tr>
+                                    `}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML = content;
+            }
+            else if (menuId === 'contacts') {
+                content = `
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+                        <div>
+                            <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Database Kontak & Tag</h2>
+                            <p class="text-slate-500 text-xs sm:text-sm mt-1">Kelola segmentasi penerima broadcast dan daftar kontak pelanggan.</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="openModal('importCsv')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2">
+                                <i class="ph-bold ph-upload-simple text-emerald-600"></i> Import CSV
+                            </button>
+                            <button onclick="openModal('addContact')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 shadow-md shadow-emerald-600/25">
+                                <i class="ph-bold ph-user-plus"></i> Tambah Kontak
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Search Bar -->
+                    <div class="mb-6">
+                        <div class="relative max-w-md">
+                            <i class="ph-bold ph-magnifying-glass absolute left-3.5 top-3 text-slate-400"></i>
+                            <input type="text" id="contactSearch" oninput="filterContacts()" placeholder="Cari nama, nomor WA, atau tag..." class="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-sm text-slate-900 outline-none focus:border-emerald-600 transition-all shadow-sm">
+                        </div>
+                    </div>
+
+                    <div class="card-white rounded-2xl overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs sm:text-sm" id="contactsTable">
+                                <thead class="bg-slate-50 text-slate-500 text-[11px] uppercase tracking-wider font-bold">
+                                    <tr>
+                                        <th class="px-6 py-3.5">Nama Kontak</th>
+                                        <th class="px-6 py-3.5">Nomor WhatsApp</th>
+                                        <th class="px-6 py-3.5">Tag Segmentasi</th>
+                                        <th class="px-6 py-3.5">Tanggal Ditambahkan</th>
+                                        <th class="px-6 py-3.5 text-right">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    ${state.contacts.length > 0 ? state.contacts.map(c => `
+                                        <tr class="hover:bg-slate-50/50 transition-colors">
+                                            <td class="px-6 py-4 text-slate-900 font-bold flex items-center gap-3">
+                                                <div class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs">
+                                                    ${c.name.charAt(0).toUpperCase()}
+                                                </div>
+                                                <span>${c.name}</span>
+                                            </td>
+                                            <td class="px-6 py-4 font-mono text-slate-600 text-xs">${c.phone}</td>
+                                            <td class="px-6 py-4">
+                                                ${c.tags.split(',').map(t => `<span class="inline-block px-2.5 py-0.5 mr-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 text-[10px] font-extrabold">${t.trim()}</span>`).join('')}
+                                            </td>
+                                            <td class="px-6 py-4 text-slate-500 text-xs">${c.created || '2026-07-26'}</td>
+                                            <td class="px-6 py-4 text-right">
+                                                <button onclick="deleteContact('${c.id}')" class="text-red-500 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition-colors"><i class="ph-bold ph-trash text-base"></i></button>
+                                            </td>
+                                        </tr>
+                                    `).join('') : `
+                                        <tr>
+                                            <td colspan="5" class="py-12 text-center text-slate-400 text-xs">
+                                                Belum ada kontak tersimpan. Klik <button onclick="openModal('addContact')" class="text-emerald-600 font-bold underline">Tambah Kontak</button> atau <button onclick="openModal('importCsv')" class="text-emerald-600 font-bold underline">Import CSV</button> untuk mengisi database.
+                                            </td>
+                                        </tr>
+                                    `}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML = content;
+            }
+            else if (menuId === 'broadcast') {
+                content = `
+                    <div class="mb-8">
+                        <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Campaign Broadcast WhatsApp</h2>
+                        <p class="text-slate-500 text-xs sm:text-sm mt-1">Kirim pesan massal ke segmen penerima secara otomatis.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Broadcast Form -->
+                        <div class="lg:col-span-1 card-white p-6 rounded-2xl">
+                            <h3 class="font-extrabold text-slate-900 text-base mb-4 flex items-center gap-2">
+                                <i class="ph-bold ph-paper-plane-tilt text-emerald-600"></i> Buat Campaign Baru
+                            </h3>
+                            <form onsubmit="handleSendBroadcast(event)" class="space-y-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Nama Campaign</label>
+                                    <input type="text" id="bcTitle" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-emerald-600" placeholder="Contoh: Promo Diskon Akhir Bulan" required>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Target Segmen / Tag</label>
+                                    <select id="bcTarget" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-emerald-600">
+                                        <option value="All Contacts">Semua Kontak (${state.contacts.length} Penerima)</option>
+                                        <option value="Tag: VIP">Tag: VIP</option>
+                                        <option value="Tag: Lead">Tag: Lead</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Pilih WhatsApp Sender Device</label>
+                                    <select id="bcDevice" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-emerald-600">
+                                        ${state.sessions.filter(s => s.status === 'Connected').map(s => `<option value="${s.id}">${s.name} (${s.phone})</option>`).join('')}
+                                        ${state.sessions.filter(s => s.status === 'Connected').length === 0 ? '<option value="">Belum ada device WA terhubung</option>' : ''}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Isi Pesan (Gunakan <code class="text-emerald-600 font-bold">{{name}}</code> untuk personalisasi)</label>
+                                    <textarea id="bcMessage" rows="5" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm text-slate-900 outline-none focus:border-emerald-600 resize-none" placeholder="Halo {{name}}, dapatkan promo istimewa hari ini..." required></textarea>
+                                </div>
+                                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl py-3 text-sm transition-all shadow-md shadow-emerald-600/25 flex items-center justify-center gap-2">
+                                    <i class="ph-bold ph-paper-plane-tilt"></i> Luncurkan Broadcast
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Broadcast History Table -->
+                        <div class="lg:col-span-2 card-white p-6 rounded-2xl flex flex-col">
+                            <h3 class="font-extrabold text-slate-900 text-base mb-4">Riwayat & Progress Broadcast</h3>
+                            <div class="overflow-x-auto flex-1">
+                                <table class="w-full text-left text-xs sm:text-sm">
+                                    <thead class="bg-slate-50 text-slate-500 text-[11px] uppercase tracking-wider font-bold">
+                                        <tr>
+                                            <th class="px-4 py-3">Nama Campaign</th>
+                                            <th class="px-4 py-3">Target</th>
+                                            <th class="px-4 py-3">Progress Terkirim</th>
+                                            <th class="px-4 py-3">Status</th>
+                                            <th class="px-4 py-3 text-right">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100">
+                                        ${state.broadcasts.length > 0 ? state.broadcasts.map(b => {
+                                            const pct = Math.round((b.sent / b.total) * 100);
+                                            return `
+                                                <tr class="hover:bg-slate-50/50 transition-colors">
+                                                    <td class="px-4 py-4 text-slate-900 font-bold">
+                                                        <p class="font-extrabold text-sm">${b.name}</p>
+                                                        <p class="text-[10px] text-slate-400">${b.date}</p>
+                                                    </td>
+                                                    <td class="px-4 py-4 text-slate-600 text-xs font-semibold">${b.target}</td>
+                                                    <td class="px-4 py-4 min-w-[140px]">
+                                                        <div class="flex justify-between text-[11px] mb-1 font-bold">
+                                                            <span class="text-slate-600">${b.sent} / ${b.total}</span>
+                                                            <span class="text-emerald-600">${pct}%</span>
+                                                        </div>
+                                                        <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                                                            <div class="h-full bg-emerald-600 transition-all duration-500 rounded-full" style="width: ${pct}%"></div>
+                                                        </div>
+                                                    </td>
+                                                    <td class="px-4 py-4">
+                                                        <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold ${b.status === 'Completed' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">
+                                                            ${b.status}
+                                                        </span>
+                                                    </td>
+                                                    <td class="px-4 py-4 text-right">
+                                                        <button onclick="deleteBroadcast('${b.id}')" class="text-red-500 hover:text-red-600 p-1.5 rounded-lg"><i class="ph-bold ph-trash text-base"></i></button>
+                                                    </td>
+                                                </tr>
+                                            `;
+                                        }).join('') : `
+                                            <tr>
+                                                <td colspan="5" class="py-12 text-center text-slate-400 text-xs">
+                                                    Belum ada campaign broadcast diluncurkan. Buat campaign baru menggunakan form di sebelah kiri.
+                                                </td>
+                                            </tr>
+                                        `}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML = content;
+            }
+            else if (menuId === 'sheets') {
+                // renderSheetsPage is called after async data load
+                renderSheetsPage(null);
+            }
+
+            else if (menuId === 'automation') {
+                content = `
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                        <div>
+                            <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Automation Flow Builder</h2>
+                            <p class="text-slate-500 text-xs sm:text-sm mt-1">Rancang alur kerja balasan otomatis dan rute pesan secara visual.</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="runAutomationSimulation()" class="bg-slate-100 hover:bg-slate-200 text-slate-800 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2">
+                                <i class="ph-bold ph-play text-emerald-600"></i> Simulasikan Flow
+                            </button>
+                            <button onclick="showToast('Workflow Automation Berhasil Di-Deploy!', 'success')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 shadow-md shadow-emerald-600/25">
+                                <i class="ph-bold ph-floppy-disk"></i> Deploy Workflow
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Flow Canvas container -->
+                    <div class="card-white rounded-2xl overflow-hidden flex flex-col h-[620px] relative">
+                        <!-- Canvas Header -->
+                        <div class="h-14 border-b border-slate-100 bg-slate-50 flex items-center px-4 justify-between z-10">
+                            <div class="flex items-center gap-3">
+                                <span class="text-sm font-bold text-slate-900">Flow: Auto-Responder Prospek WA</span>
+                                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">Active Node</span>
+                            </div>
+                            <div class="flex gap-2 text-xs">
+                                <button onclick="addAutomationNode('condition')" class="bg-white hover:bg-slate-100 text-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 font-bold flex items-center gap-1">
+                                    <i class="ph-bold ph-plus text-emerald-600"></i> Tambah Node
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Canvas Workspace -->
+                        <div class="flex-1 w-full relative overflow-auto bg-[#f8f8fc] p-8 flex justify-center items-start hide-scroll" style="background-image: radial-gradient(#cbd5e1 1px, transparent 1px); background-size: 24px 24px;">
+                            
+                            <div class="flex flex-col items-center pb-20 mt-4 space-y-6 relative" id="nodesContainer">
+                                ${state.automationNodes.map((n, idx) => `
+                                    <div class="w-80 bg-white border border-slate-200 rounded-2xl shadow-lg relative z-10 hover:border-emerald-500 transition-all p-5 group" id="node_el_${n.id}">
+                                        <div class="flex items-center justify-between mb-3">
+                                            <div class="flex items-center gap-2 text-emerald-600 font-bold">
+                                                <i class="${n.icon} text-xl"></i>
+                                                <span class="text-[10px] font-extrabold uppercase tracking-wider">${n.type}</span>
+                                            </div>
+                                            <button onclick="removeAutomationNode('${n.id}')" class="text-slate-400 hover:text-red-500 transition-colors p-1"><i class="ph-bold ph-trash text-sm"></i></button>
+                                        </div>
+                                        <h4 class="text-slate-900 font-bold text-sm">${n.title}</h4>
+                                        <p class="text-xs text-slate-500 mt-1 font-medium">${n.desc}</p>
+                                    </div>
+                                    ${idx < state.automationNodes.length - 1 ? `
+                                        <div class="w-0.5 h-8 bg-emerald-400 relative">
+                                            <div class="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-2 h-2 border-r-2 border-b-2 border-emerald-600 rotate-45"></div>
+                                        </div>
+                                    ` : ''}
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML = content;
+            }
+            else if (menuId === 'ai') {
+                content = `
+                    <div class="mb-8">
+                        <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">AI Agent Configurator</h2>
+                        <p class="text-slate-500 text-xs sm:text-sm mt-1">Konfigurasi LLM provider (OpenAI / Gemini / Claude) untuk menjawab pesan otomatis.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- AI Form Config -->
+                        <div class="lg:col-span-2 card-white p-6 rounded-2xl">
+                            <form onsubmit="handleSaveAiConfig(event)" class="space-y-6">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-2">Pilih Provider LLM AI</label>
+                                    <div class="grid grid-cols-3 gap-3">
+                                        <button type="button" onclick="selectAiProvider('openai')" class="p-3.5 rounded-2xl border ${state.aiConfig.provider === 'openai' ? 'border-emerald-600 bg-emerald-50 text-emerald-900 font-bold shadow-sm' : 'border-slate-200 bg-slate-50 text-slate-600'} flex flex-col items-center gap-1 transition-all">
+                                            <i class="ph-bold ph-atom text-2xl text-emerald-600"></i>
+                                            <span class="text-xs">OpenAI</span>
+                                        </button>
+                                        <button type="button" onclick="selectAiProvider('gemini')" class="p-3.5 rounded-2xl border ${state.aiConfig.provider === 'gemini' ? 'border-emerald-600 bg-emerald-50 text-emerald-900 font-bold shadow-sm' : 'border-slate-200 bg-slate-50 text-slate-600'} flex flex-col items-center gap-1 transition-all">
+                                            <i class="ph-bold ph-sparkle text-2xl text-blue-500"></i>
+                                            <span class="text-xs">Google Gemini</span>
+                                        </button>
+                                        <button type="button" onclick="selectAiProvider('claude')" class="p-3.5 rounded-2xl border ${state.aiConfig.provider === 'claude' ? 'border-emerald-600 bg-emerald-50 text-emerald-900 font-bold shadow-sm' : 'border-slate-200 bg-slate-50 text-slate-600'} flex flex-col items-center gap-1 transition-all">
+                                            <i class="ph-bold ph-brain text-2xl text-emerald-500"></i>
+                                            <span class="text-xs">Anthropic Claude</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-700 mb-1.5">Model LLM</label>
+                                        <select id="aiModelSelect" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-emerald-600">
+                                            <option value="gpt-4o" ${state.aiConfig.model === 'gpt-4o' ? 'selected' : ''}>gpt-4o (Recommended)</option>
+                                            <option value="gpt-4o-mini" ${state.aiConfig.model === 'gpt-4o-mini' ? 'selected' : ''}>gpt-4o-mini</option>
+                                            <option value="gemini-1.5-pro" ${state.aiConfig.model === 'gemini-1.5-pro' ? 'selected' : ''}>gemini-1.5-pro</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-700 mb-1.5">API Key Provider</label>
+                                        <input type="password" id="aiApiKeyInput" value="${state.aiConfig.apiKey}" placeholder="sk-..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 font-mono outline-none focus:border-emerald-600" required>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1.5">System Prompt / Instructions Bot</label>
+                                    <textarea id="aiSystemPromptInput" rows="5" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm text-slate-900 outline-none focus:border-emerald-600 resize-none font-sans">${state.aiConfig.systemPrompt}</textarea>
+                                </div>
+
+                                <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl px-6 py-2.5 text-sm transition-all shadow-md shadow-emerald-600/25">
+                                    Simpan Konfigurasi AI
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Interactive Sandbox Chat -->
+                        <div class="card-white p-6 rounded-2xl flex flex-col h-[520px]">
+                            <h3 class="font-extrabold text-slate-900 text-base mb-3 flex items-center gap-2">
+                                <i class="ph-bold ph-chats text-emerald-600"></i> Testing Sandbox AI
+                            </h3>
+                            <div class="flex-1 bg-slate-50 rounded-2xl border border-slate-200 p-4 flex flex-col overflow-hidden relative">
+                                <div class="flex-1 overflow-y-auto space-y-3 pr-2 hide-scroll" id="sandboxChatContainer">
+                                    ${state.sandboxChat.length > 0 ? state.sandboxChat.map(msg => `
+                                        <div class="flex gap-2 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}">
+                                            <div class="max-w-[85%] rounded-2xl px-4 py-2.5 text-xs ${msg.sender === 'user' ? 'bg-emerald-600 text-white font-medium rounded-tr-none shadow-sm' : 'bg-white text-slate-800 border border-slate-200 rounded-tl-none font-medium'}">
+                                                ${msg.text}
+                                            </div>
+                                        </div>
+                                    `).join('') : `
+                                        <div class="text-center py-16 text-slate-400 text-xs">
+                                            <i class="ph-bold ph-chats text-3xl mb-2 text-slate-300 block mx-auto"></i>
+                                            Ketik pesan di bawah untuk menguji respon AI Agent Anda secara realtime.
+                                        </div>
+                                    `}
+                                </div>
+                                <form onsubmit="handleSandboxSend(event)" class="flex gap-2 mt-3 pt-3 border-t border-slate-200">
+                                    <input type="text" id="sandboxInput" placeholder="Ketik pesan untuk test AI..." class="flex-1 bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-900 outline-none focus:border-emerald-600" required>
+                                    <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-xl transition-all font-bold">
+                                        <i class="ph-bold ph-paper-plane-right"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML = content;
+            }
+            else if (menuId === 'billing') {
+                content = `
+                    <div class="mb-8">
+                        <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Billing & Quota Usage</h2>
+                        <p class="text-slate-500 text-xs sm:text-sm mt-1">Pantau pemakaian resource gateway dan tagihan berlangganan.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                        <div class="card-white p-6 rounded-2xl flex flex-col justify-between">
+                            <div>
+                                <span class="px-3 py-1 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-700 uppercase tracking-wider">Production Mode</span>
+                                <h3 class="text-2xl font-black text-slate-900 mt-3">Gateway Server</h3>
+                                <p class="text-3xl font-light text-slate-900 mt-2">Active <span class="text-xs text-slate-500">/ Localhost:3000</span></p>
+                                <p class="text-xs text-slate-500 mt-2">Node.js Engine Service Ready</p>
+                            </div>
+                            <button onclick="showToast('Server Node.js berjalan secara lokal', 'info')" class="mt-6 w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl py-2.5 text-xs transition-all shadow-md shadow-emerald-600/25">
+                                Check Health Status
+                            </button>
+                        </div>
+
+                        <div class="lg:col-span-2 card-white p-6 rounded-2xl flex flex-col justify-between">
+                            <h3 class="font-extrabold text-slate-900 text-base mb-4">Penggunaan Quota Realtime</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <div class="flex justify-between text-xs mb-1.5 font-bold">
+                                        <span class="text-slate-700">WhatsApp Messages</span>
+                                        <span class="text-slate-500">${state.stats.messagesToday} Messages</span>
+                                    </div>
+                                    <div class="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                                        <div class="h-full bg-emerald-600 rounded-full" style="width: ${Math.min(100, state.stats.messagesToday * 2)}%"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-xs mb-1.5 font-bold">
+                                        <span class="text-slate-700">REST API Calls</span>
+                                        <span class="text-slate-500">${state.stats.apiCalls} Calls</span>
+                                    </div>
+                                    <div class="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                                        <div class="h-full bg-amber-500 rounded-full" style="width: ${Math.min(100, state.stats.apiCalls * 2)}%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML = content;
+            }
+        }
+
+        /* ================= Dashboard Chart Initialization ================= */
+        function initDashboardChart() {
+            const ctx = document.getElementById('trafficChart');
+            if (!ctx) return;
+
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            const gradient1 = ctx.getContext('2d').createLinearGradient(0, 0, 0, 300);
+            gradient1.addColorStop(0, 'rgba(5, 150, 105, 0.35)');
+            gradient1.addColorStop(1, 'rgba(5, 150, 105, 0.0)');
+
+            const gradient2 = ctx.getContext('2d').createLinearGradient(0, 0, 0, 300);
+            gradient2.addColorStop(0, 'rgba(59, 130, 246, 0.25)');
+            gradient2.addColorStop(1, 'rgba(59, 130, 246, 0.0)');
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['00:00', '03:00', '06:00', '09:00', '12:00', '15:00', '18:00', '21:00'],
+                    datasets: [
+                        {
+                            label: 'Pesan Terkirim',
+                            data: [0, 0, 0, 0, 0, 0, 0, state.stats.messagesToday],
+                            borderColor: '#059669',
+                            backgroundColor: gradient1,
+                            fill: true,
+                            tension: 0.4,
+                            borderWidth: 3,
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        },
+                        {
+                            label: 'Pesan Masuk',
+                            data: [0, 0, 0, 0, 0, 0, 0, 0],
+                            borderColor: '#3b82f6',
+                            backgroundColor: gradient2,
+                            fill: true,
+                            tension: 0.4,
+                            borderWidth: 2,
+                            pointRadius: 3,
+                            pointHoverRadius: 5
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#475569', font: { family: 'Plus Jakarta Sans', size: 11, weight: 'bold' } }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: '#f1f5f9' },
+                            ticks: { color: '#64748b', font: { family: 'Plus Jakarta Sans', size: 10 } }
+                        },
+                        y: {
+                            grid: { color: '#f1f5f9' },
+                            ticks: { color: '#64748b', font: { family: 'Plus Jakarta Sans', size: 10 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        /* ================= Action Handlers ================= */
+        function toggleSessionStatus(sessionId) {
+            const session = state.sessions.find(s => s.id === sessionId);
+            if (session) {
+                session.status = session.status === 'Connected' ? 'Disconnected' : 'Connected';
+                session.lastSeen = 'Just now';
+                saveState();
+                renderContent('sessions');
+                showToast(`Status sesi ${session.name} diperbarui: ${session.status}`, session.status === 'Connected' ? 'success' : 'error');
+            }
+        }
+
+        function deleteSession(sessionId) {
+            state.sessions = state.sessions.filter(s => s.id !== sessionId);
+            state.stats.totalSessions = state.sessions.length;
+            saveState();
+            renderContent('sessions');
+            showToast('Sesi WhatsApp berhasil dihapus', 'info');
+        }
+
+        function deleteApiKey(keyId) {
+            state.apikeys = state.apikeys.filter(k => k.id !== keyId);
+            saveState();
+            renderContent('api');
+            showToast('API Key telah dicabut (Revoked)', 'info');
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('Key disalin ke clipboard!', 'success');
+            }).catch(() => {
+                showToast('Disalin: ' + text, 'info');
+            });
+        }
+
+        function simulateIncomingWebhook() {
+            const events = ['message.received', 'message.sent', 'session.status'];
+            const randomEvent = events[Math.floor(Math.random() * events.length)];
+            const newWh = {
+                id: 'wh_' + Date.now().toString().slice(-4),
+                url: state.sheetsConfig.url || 'https://api.mycompany.com/wh/whatsapp',
+                event: randomEvent,
+                status: 200,
+                latency: Math.floor(Math.random() * 40 + 10) + 'ms',
+                time: 'Just now',
+                payload: JSON.stringify({
+                    event: randomEvent,
+                    timestamp: new Date().toISOString(),
+                    data: { from: '+62812' + Math.floor(100000 + Math.random() * 900000), text: 'Incoming production payload' }
+                }, null, 2)
+            };
+            state.webhooks.unshift(newWh);
+            state.stats.apiCalls += 1;
+            saveState();
+            renderContent(state.activeMenu);
+            showToast('Payload Webhook dikirim!', 'success');
+        }
+
+        function clearWebhooks() {
+            state.webhooks = [];
+            saveState();
+            renderContent('webhook');
+            showToast('Webhooks log dibersihkan', 'info');
+        }
+
+        function filterContacts() {
+            const query = document.getElementById('contactSearch').value.toLowerCase();
+            const rows = document.querySelectorAll('#contactsTable tbody tr');
+            rows.forEach(r => {
+                const text = r.innerText.toLowerCase();
+                r.style.display = text.includes(query) ? '' : 'none';
+            });
+        }
+
+        function deleteContact(id) {
+            state.contacts = state.contacts.filter(c => c.id !== id);
+            saveState();
+            renderContent('contacts');
+            showToast('Kontak berhasil dihapus', 'info');
+        }
+
+        function handleSendBroadcast(e) {
+            e.preventDefault();
+            const title = document.getElementById('bcTitle').value;
+            const target = document.getElementById('bcTarget').value;
+            const newBc = {
+                id: 'b_' + Date.now().toString().slice(-4),
+                name: title,
+                target: target,
+                sent: 1,
+                total: state.contacts.length || 10,
+                status: 'In Progress',
+                date: new Date().toISOString().split('T')[0]
+            };
+            state.broadcasts.unshift(newBc);
+            state.stats.messagesToday += newBc.total;
+            saveState();
+            renderContent('broadcast');
+            showToast('Campaign Broadcast diluncurkan!', 'success');
+
+            // Progress loop
+            let interval = setInterval(() => {
+                const bc = state.broadcasts.find(b => b.id === newBc.id);
+                if (bc && bc.sent < bc.total) {
+                    bc.sent += Math.floor(Math.random() * 3 + 1);
+                    if (bc.sent >= bc.total) {
+                        bc.sent = bc.total;
+                        bc.status = 'Completed';
+                        clearInterval(interval);
+                    }
+                    saveState();
+                    if (state.activeMenu === 'broadcast') renderContent('broadcast');
+                } else {
+                    clearInterval(interval);
+                }
+            }, 1000);
+        }
+        function deleteBroadcast(id) {
+            state.broadcasts = state.broadcasts.filter(b => b.id !== id);
+            saveState();
+            renderContent('broadcast');
+            showToast('Riwayat broadcast dihapus', 'info');
+        }
+
+        /* ===== INTEGRATIONS MANAGEMENT ===== */
+
+        // Track currently selected session on the sheets page
+        let sheetsSelectedSessionId = null;
+
+        async function syncIntegrationsFromServer() {
+            try {
+                const res = await fetch('/api/integrations');
+                const data = await res.json();
+                if (data.success) {
+                    state.integrations = data.integrations;
+                    saveState();
+                }
+            } catch (e) {
+                console.warn('[ATSUGA] Could not sync integrations:', e.message);
+            }
+        }
+
+        /**
+         * Render the sheets page — exactly matches the screenshot layout.
+         * Shows session tabs on top; for selected session shows the config form (left)
+         * and Status & Sync Audit panel (right).
+         */
+        async function renderSheetsPage(selectedSessionId) {
+            if (state.activeMenu !== 'sheets') return;
+
+            // Sync latest data from server
+            try {
+                const [intgRes] = await Promise.all([fetch('/api/integrations')]);
+                const intgData = await intgRes.json();
+                if (intgData.success) { state.integrations = intgData.integrations; saveState(); }
+            } catch(e) {}
+
+            const container = document.getElementById('mainContent');
+            if (!container) return;
+
+            const sessions = state.sessions || [];
+            const connectedSessions = sessions.filter(s => s.status === 'Connected');
+
+            // Determine active session tab
+            if (!selectedSessionId && connectedSessions.length > 0) {
+                selectedSessionId = sheetsSelectedSessionId || connectedSessions[0].id;
+            }
+            sheetsSelectedSessionId = selectedSessionId;
+
+            const activeSession = sessions.find(s => s.id === selectedSessionId);
+            const sessionIntg = (state.integrations || []).find(
+                i => i.sessionId === selectedSessionId
+            );
+
+            const isConnected = !!sessionIntg;
+            const lastSyncDisplay = sessionIntg?.lastSync
+                ? (() => {
+                    const diff = Date.now() - new Date(sessionIntg.lastSync).getTime();
+                    const m = Math.floor(diff / 60000);
+                    return m < 1 ? 'Baru saja' : `${m}m ago`;
+                  })()
+                : 'Belum ada';
+
+            const html = `
+                <div class="mb-8">
+                    <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Integrasi Google Sheets Sync</h2>
+                    <p class="text-slate-500 text-xs sm:text-sm mt-1">Otomatiskan logging pesan WA masuk dan lead ke Google Spreadsheet Anda secara realtime.</p>
+                </div>
+
+                ${connectedSessions.length > 1 ? `
+                <!-- Session Tabs -->
+                <div class="flex gap-2 mb-6 flex-wrap">
+                    ${connectedSessions.map(s => `
+                        <button onclick="renderSheetsPage('${s.id}')"
+                            class="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${s.id === selectedSessionId
+                                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/25'
+                                : 'bg-white border border-slate-200 text-slate-600 hover:border-emerald-400'}">
+                            <i class="ph-fill ph-whatsapp-logo"></i>
+                            ${s.phone || s.name}
+                            ${((state.integrations||[]).some(i=>i.sessionId===s.id&&i.enabled)) ? '<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block"></span>' : ''}
+                        </button>
+                    `).join('')}
+                </div>` : ''}
+
+                ${sessions.length === 0 ? `
+                    <div class="card-white p-12 text-center rounded-3xl">
+                        <i class="ph-bold ph-device-mobile text-5xl text-slate-300 mb-3 block"></i>
+                        <h4 class="font-extrabold text-slate-900">Belum Ada Sesi WhatsApp</h4>
+                        <p class="text-xs text-slate-500 mt-1 mb-4">Hubungkan minimal satu nomor WhatsApp terlebih dahulu.</p>
+                        <button onclick="setMenu('sessions')" class="bg-emerald-600 text-white font-bold px-5 py-2.5 rounded-xl text-sm">
+                            → Hubungkan WhatsApp
+                        </button>
+                    </div>
+                ` : `
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- LEFT: Config Form (2/3) — identical to screenshot -->
+                    <div class="lg:col-span-2 card-white p-6 rounded-2xl">
+                        <div class="flex items-center gap-3 p-4 rounded-xl bg-emerald-50 border border-emerald-100 mb-6">
+                            <i class="ph-fill ph-table text-emerald-600 text-2xl"></i>
+                            <div>
+                                <p class="text-xs text-emerald-900 font-semibold">
+                                    Tempelkan Web App URL Google Apps Script Anda untuk langsung menghubungkan Gateway ini dengan Spreadsheet target.
+                                </p>
+                                ${activeSession ? `<p class="text-[11px] text-emerald-700 mt-0.5">Nomor: <strong>${activeSession.phone || activeSession.name}</strong></p>` : ''}
+                            </div>
+                        </div>
+
+                        <form onsubmit="handleSaveSheetsConfig(event, '${selectedSessionId}')" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Google Apps Script Web App URL</label>
+                                <input type="url" id="sheetUrl" value="${sessionIntg?.appsScriptUrl || ''}"
+                                    placeholder="https://script.google.com/macros/s/AKfycbx_atsuga_sheets_appsscript/exec"
+                                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-900 font-mono outline-none focus:border-emerald-600 transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Nama Sheet / Tab</label>
+                                <input type="text" id="sheetTab" value="${sessionIntg?.sheetName || 'WhatsApp_Leads'}"
+                                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-900 outline-none focus:border-emerald-600 transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Trigger Keywords (pisah koma, kosongkan untuk semua pesan)</label>
+                                <input type="text" id="sheetTriggers" value="${(sessionIntg?.triggers || []).join(', ')}"
+                                    placeholder="saldo, laporan, beli, gaji, bayar, help"
+                                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-900 outline-none focus:border-emerald-600 transition-all">
+                            </div>
+                            <div class="flex items-center gap-2 pt-1">
+                                <input type="checkbox" id="autoSyncCheck" ${(sessionIntg?.autoSync !== false) ? 'checked' : ''}
+                                    class="w-4 h-4 rounded bg-slate-100 border-slate-300 text-emerald-600 focus:ring-0">
+                                <label for="autoSyncCheck" class="text-xs text-slate-700 font-bold">Otomatis sync setiap kali ada pesan masuk baru (Realtime Hook)</label>
+                            </div>
+                            <div class="flex gap-3 pt-4 border-t border-slate-100">
+                                <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl px-5 py-2.5 text-sm transition-all shadow-md shadow-emerald-600/25">
+                                    Simpan Konfigurasi
+                                </button>
+                                <button type="button" onclick="testSheetsConnection('${sessionIntg?.id || ''}')"
+                                    class="bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl px-5 py-2.5 text-sm font-bold transition-all">
+                                    Uji Koneksi (Test Sync)
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- RIGHT: Status & Sync Audit — identical to screenshot -->
+                    <div class="card-white p-6 rounded-2xl flex flex-col justify-between">
+                        <div>
+                            <h3 class="font-extrabold text-slate-900 text-base mb-4">Status &amp; Sync Audit</h3>
+                            <div class="space-y-3 text-xs">
+                                <div class="flex justify-between py-2 border-b border-slate-100">
+                                    <span class="text-slate-500">Sync Engine Status</span>
+                                    <span class="${isConnected ? 'text-emerald-600' : 'text-slate-400'} font-bold">${isConnected ? 'CONNECTED' : 'NOT LINKED'}</span>
+                                </div>
+                                <div class="flex justify-between py-2 border-b border-slate-100">
+                                    <span class="text-slate-500">Sync Terakhir</span>
+                                    <span class="text-slate-800 font-bold">${lastSyncDisplay}</span>
+                                </div>
+                                <div class="flex justify-between py-2 border-b border-slate-100">
+                                    <span class="text-slate-500">Baris Data Terkirim</span>
+                                    <span class="text-slate-800 font-bold">—</span>
+                                </div>
+                                <div class="flex justify-between py-2">
+                                    <span class="text-slate-500">Nomor WA</span>
+                                    <span class="text-slate-800 font-bold text-right">${activeSession?.phone || '—'}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-4 rounded-2xl ${isConnected ? 'bg-emerald-50 border border-emerald-100' : 'bg-slate-50 border border-slate-100'} mt-6 text-center">
+                            <i class="ph-bold ph-check-circle ${isConnected ? 'text-emerald-600' : 'text-slate-400'} text-2xl mb-1"></i>
+                            <p class="text-xs font-bold text-slate-900">${isConnected ? 'Google Sheet Active' : 'Setup Webhook URL'}</p>
+                            <p class="text-[10px] text-slate-500 mt-1">Data prospek otomatis masuk ke tab <em>${sessionIntg?.sheetName || 'WhatsApp_Leads'}</em></p>
+                        </div>
+                    </div>
+                </div>
+                `}
+            `;
+
+            container.innerHTML = html;
+        }
+
+        async function handleSaveSheetsConfig(e, sessionId) {
+            if (e) e.preventDefault();
+            const url = document.getElementById('sheetUrl')?.value?.trim();
+            const sheetName = document.getElementById('sheetTab')?.value?.trim() || 'WhatsApp_Leads';
+            const triggersRaw = document.getElementById('sheetTriggers')?.value || '';
+            const triggers = triggersRaw.split(',').map(t => t.trim()).filter(Boolean);
+            const autoSync = document.getElementById('autoSyncCheck')?.checked ?? true;
+
+            if (!url) { showToast('URL Apps Script wajib diisi', 'error'); return; }
+            if (!sessionId) { showToast('Tidak ada sesi WA dipilih', 'error'); return; }
+
+            const session = (state.sessions || []).find(s => s.id === sessionId);
+            const existingIntg = (state.integrations || []).find(i => i.sessionId === sessionId);
+
+            const payload = {
+                sessionId,
+                name: `Sheets — ${session?.phone || session?.name || sessionId}`,
+                description: `Integrasi Google Sheets untuk ${session?.phone || sessionId}`,
+                appsScriptUrl: url,
+                sheetName,
+                triggers,
+                matchMode: triggers.length === 0 ? 'catchAll' : 'startsWith',
+                autoSync,
+                enabled: true
+            };
+
+            try {
+                const method = existingIntg ? 'PUT' : 'POST';
+                const endpoint = existingIntg ? `/api/integrations/${existingIntg.id}` : '/api/integrations';
+                const res = await fetch(endpoint, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast('Konfigurasi Google Sheets disimpan!', 'success');
+                    await syncIntegrationsFromServer();
+                    renderSheetsPage(sessionId);
+                } else {
+                    showToast('Gagal: ' + data.error, 'error');
+                }
+            } catch (err) {
+                showToast('Error: ' + err.message, 'error');
+            }
+        }
+
+        async function testSheetsConnection(integrationId) {
+            if (!integrationId) {
+                showToast('Simpan konfigurasi terlebih dahulu sebelum menguji koneksi', 'error');
+                return;
+            }
+            showToast('Menghubungkan ke Google Apps Script...', 'info');
+            try {
+                const res = await fetch(`/api/integrations/${integrationId}/test`, { method: 'POST' });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(`✅ Koneksi Sukses ke Google Sheets! Respons: "${data.response?.substring(0, 80)}"`, 'success');
+                    await syncIntegrationsFromServer();
+                    renderSheetsPage(sheetsSelectedSessionId);
+                } else {
+                    showToast(`❌ Test gagal: ${data.error}`, 'error');
+                }
+            } catch (err) {
+                showToast('Error koneksi: ' + err.message, 'error');
+            }
+        }
+
+        // Legacy stubs
+        function testBotConnection() {}
+        function loadBotConfig() {}
+        function syncIntegrationsFromServerAndRender() { syncIntegrationsFromServer(); }
+        function quickAddKeuanganBot() {}
+
+        function addAutomationNode(type) {
+            const newNode = {
+                id: 'n_' + Date.now().toString().slice(-4),
+                type: 'condition',
+                title: 'Node Filter Baru',
+                desc: 'Memeriksa variabel atau kata kunci',
+                icon: 'ph-git-branch',
+                color: 'blue'
+            };
+            state.automationNodes.push(newNode);
+            saveState();
+            renderContent('automation');
+            showToast('Node automation baru ditambahkan!', 'success');
+        }
+
+        function removeAutomationNode(id) {
+            state.automationNodes = state.automationNodes.filter(n => n.id !== id);
+            saveState();
+            renderContent('automation');
+            showToast('Node berhasil dihapus', 'info');
+        }
+
+        function runAutomationSimulation() {
+            showToast('Menjalankan simulasi workflow...', 'info');
+            state.automationNodes.forEach((n, idx) => {
+                setTimeout(() => {
+                    const el = document.getElementById('node_el_' + n.id);
+                    if (el) {
+                        el.classList.add('border-emerald-600', 'node-glow');
+                        setTimeout(() => el.classList.remove('border-emerald-600', 'node-glow'), 1200);
+                    }
+                }, idx * 1000);
+            });
+            setTimeout(() => {
+                showToast('Simulasi Selesai! Semua node tereksekusi.', 'success');
+            }, state.automationNodes.length * 1000 + 400);
+        }
+
+        function selectAiProvider(provider) {
+            state.aiConfig.provider = provider;
+            if (provider === 'openai') state.aiConfig.model = 'gpt-4o';
+            else if (provider === 'gemini') state.aiConfig.model = 'gemini-1.5-pro';
+            else if (provider === 'claude') state.aiConfig.model = 'claude-3-5-sonnet';
+            saveState();
+            renderContent('ai');
+        }
+
+        function handleSaveAiConfig(e) {
+            e.preventDefault();
+            state.aiConfig.model = document.getElementById('aiModelSelect').value;
+            state.aiConfig.apiKey = document.getElementById('aiApiKeyInput').value;
+            state.aiConfig.systemPrompt = document.getElementById('aiSystemPromptInput').value;
+            saveState();
+            showToast('Konfigurasi AI Agent disimpan!', 'success');
+        }
+
+        function handleSandboxSend(e) {
+            e.preventDefault();
+            const input = document.getElementById('sandboxInput');
+            const val = input.value.trim();
+            if (!val) return;
+
+            state.sandboxChat.push({ sender: 'user', text: val });
+            input.value = '';
+            renderContent('ai');
+
+            setTimeout(() => {
+                let botReply = 'Halo! Saya adalah ATSUGA AI Agent. Silakan konfigurasikan API Key Anda di panel sebelah kiri untuk respon AI langsung.';
+                if (state.aiConfig.apiKey) {
+                    botReply = `[${state.aiConfig.provider.toUpperCase()} - ${state.aiConfig.model}]: Halo! Terima kasih telah menghubungi kami. Ada yang bisa dibantu?`;
+                }
+                state.sandboxChat.push({ sender: 'bot', text: botReply });
+                saveState();
+                renderContent('ai');
+                const container = document.getElementById('sandboxChatContainer');
+                if (container) container.scrollTop = container.scrollHeight;
+            }, 600);
+        }
+
+        /* ================= Modals System ================= */
+        function openModal(type, extraData) {
+            const overlay = document.getElementById('modalOverlay');
+            const content = document.getElementById('modalContent');
+
+            let html = '';
+            if (type === 'viewAccounts') {
+                html = `
+                    <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                        <div>
+                            <h3 class="text-base font-extrabold text-slate-900">Daftar Akun Kredensial Admin</h3>
+                            <p class="text-xs text-slate-500">Klik baris akun mana saja untuk mengisi form login secara otomatis</p>
+                        </div>
+                        <button onclick="closeModal()" class="text-slate-400 hover:text-slate-700"><i class="ph-bold ph-x text-xl"></i></button>
+                    </div>
+                    <div class="p-6 overflow-y-auto max-h-[420px] space-y-2">
+                        <div class="p-3.5 rounded-2xl bg-purple-50 border border-purple-200 cursor-pointer hover:bg-purple-100 flex justify-between items-center" onclick="fillLoginForm('superadmin', 'SuperAdminPass2026!')">
+                            <div>
+                                <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-purple-600 text-white uppercase">Super Admin</span>
+                                <h4 class="font-bold text-slate-900 text-xs mt-1">superadmin</h4>
+                                <p class="text-[10px] text-slate-500">Pass: SuperAdminPass2026!</p>
+                            </div>
+                            <span class="text-xs text-purple-700 font-bold">Gunakan Akun Ini &rarr;</span>
+                        </div>
+
+                        <div class="h-px bg-slate-200 my-2"></div>
+                        <p class="text-xs font-bold text-slate-700 mb-2">20 Admin Accounts (Tanpa Tombol Reset State):</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            ${usersDB.filter(u => u.role === 'admin').map(u => `
+                                <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 hover:border-emerald-500 cursor-pointer transition-all" onclick="fillLoginForm('${u.username}', '${u.password}')">
+                                    <span class="px-2 py-0.2 rounded text-[9px] font-extrabold bg-emerald-100 text-emerald-700 uppercase">Admin</span>
+                                    <h5 class="font-bold text-slate-800 text-xs mt-0.5">${u.username}</h5>
+                                    <p class="text-[10px] text-slate-500 font-mono">${u.password}</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            else if (type === 'addIntegration') {
+                html = `
+                    <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                        <h3 id="intgModalTitle" class="text-base font-extrabold text-slate-900">Tambah Integrasi Baru</h3>
+                        <button onclick="closeModal()" class="text-slate-400 hover:text-slate-700"><i class="ph-bold ph-x text-xl"></i></button>
+                    </div>
+                    <form onsubmit="handleSaveIntegration(event)" class="p-6 space-y-4 overflow-y-auto max-h-[80vh]">
+                        <input type="hidden" id="intgId">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5">Nama Integrasi <span class="text-red-500">*</span></label>
+                            <input type="text" id="intgName" placeholder="Contoh: Laporan Keuangan" required
+                                class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-900 outline-none focus:border-emerald-600">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5">Deskripsi</label>
+                            <input type="text" id="intgDesc" placeholder="Bot pencatat keuangan otomatis"
+                                class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-900 outline-none focus:border-emerald-600">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5">Google Apps Script Web App URL <span class="text-red-500">*</span></label>
+                            <input type="url" id="intgUrl" placeholder="https://script.google.com/macros/s/AKfy.../exec" required
+                                class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-900 font-mono outline-none focus:border-emerald-600">
+                            <p class="text-[11px] text-slate-400 mt-1">Dari Apps Script → Deploy → New Deployment → Web App</p>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5">Trigger Keywords (pisah koma)</label>
+                            <input type="text" id="intgTriggers" placeholder="saldo, laporan, beli, gaji, bayar, help"
+                                class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-900 outline-none focus:border-emerald-600">
+                            <p class="text-[11px] text-slate-400 mt-1">Kosongkan untuk catch-all (merespons semua pesan masuk)</p>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5">Mode Pencocokan</label>
+                            <select id="intgMatchMode" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-900 outline-none focus:border-emerald-600">
+                                <option value="startsWith">startsWith — pesan diawali keyword</option>
+                                <option value="catchAll">catchAll — cocok semua pesan (fallback)</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center gap-3 py-2">
+                            <input type="checkbox" id="intgEnabled" checked class="w-4 h-4 rounded bg-slate-100 border-slate-300 text-emerald-600 focus:ring-0">
+                            <label for="intgEnabled" class="text-sm font-bold text-slate-700">Aktifkan integrasi ini</label>
+                        </div>
+                        <div class="flex gap-3 pt-2 border-t border-slate-100">
+                            <button type="submit" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl py-2.5 text-sm transition-all shadow-md shadow-emerald-600/25">
+                                Simpan Integrasi
+                            </button>
+                            <button type="button" onclick="closeModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl px-5 py-2.5 text-sm transition-all">
+                                Batal
+                            </button>
+                        </div>
+                    </form>
+                `;
+            }
+            else if (type === 'addSession') {
+                html = `
+                    <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                        <h3 class="text-base font-extrabold text-slate-900">Hubungkan Perangkat WhatsApp</h3>
+                        <button onclick="closeModal()" class="text-slate-400 hover:text-slate-700"><i class="ph-bold ph-x text-xl"></i></button>
+                    </div>
+                    <div class="p-6 flex flex-col items-center text-center space-y-4">
+                        <p class="text-xs text-slate-500">Buka WhatsApp di HP Anda &gt; <b>Perangkat Tertaut (Linked Devices)</b> &gt; <b>Tautkan Perangkat</b>, lalu scan QR Code di bawah ini.</p>
+                        
+                        <div id="qrContainer" class="w-56 h-56 bg-slate-50 rounded-2xl p-3 relative flex items-center justify-center border-2 border-emerald-300 shadow-lg overflow-hidden">
+                            <div id="qrLoader" class="flex flex-col items-center gap-2 text-emerald-600">
+                                <i class="ph-bold ph-spinner animate-spin text-3xl"></i>
+                                <span class="text-xs font-bold text-slate-700">Menghubungkan ke Engine WhatsApp...</span>
+                            </div>
+                            <img id="qrImage" class="hidden w-full h-full object-contain rounded-xl" alt="WhatsApp QR Code">
+                        </div>
+
+                        <div class="w-full space-y-3 pt-2">
+                            <div class="flex gap-2">
+                                <input type="text" id="newSessionName" placeholder="Nama Perangkat (e.g. WA Utama CS)" value="WhatsApp Utama" class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 outline-none focus:border-emerald-600 text-center font-bold" required>
+                                <button type="button" onclick="startRealQrGeneration()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs shadow-md shadow-emerald-600/20 transition-all flex items-center gap-1.5">
+                                    <i class="ph-bold ph-qr-code"></i> Generate QR Code
+                                </button>
+                            </div>
+                            <p id="qrStatusText" class="text-[11px] text-slate-400 font-medium">QR Code dibuat secara otomatis oleh WhatsApp Multi-Device Engine.</p>
+                        </div>
+                    </div>
+                `;
+            }
+            else if (type === 'addApiKey') {
+                html = `
+                    <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                        <h3 class="text-base font-extrabold text-slate-900">Generate API Key Baru</h3>
+                        <button onclick="closeModal()" class="text-slate-400 hover:text-slate-700"><i class="ph-bold ph-x text-xl"></i></button>
+                    </div>
+                    <form onsubmit="handleAddApiKeySubmit(event)" class="p-6 space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5">Nama Aplikasi / Deskripsi</label>
+                            <input type="text" id="keyNameInput" placeholder="Contoh: Mobile App Integration" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-900 outline-none focus:border-emerald-600" required>
+                        </div>
+                        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl py-2.5 text-sm transition-all shadow-md shadow-emerald-600/25">
+                            Generate Key
+                        </button>
+                    </form>
+                `;
+            }
+            else if (type === 'viewWebhookPayload') {
+                const wh = state.webhooks.find(w => w.id === extraData);
+                html = `
+                    <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                        <h3 class="text-base font-extrabold text-slate-900">Payload Webhook #${extraData}</h3>
+                        <button onclick="closeModal()" class="text-slate-400 hover:text-slate-700"><i class="ph-bold ph-x text-xl"></i></button>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <pre class="bg-slate-900 p-4 rounded-xl text-xs font-mono text-emerald-300 overflow-x-auto border border-slate-800">${wh ? wh.payload : '{}'}</pre>
+                        <button onclick="copyToClipboard('${wh ? wh.payload.replace(/'/g, "\\'") : ''}')" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-xl py-2 text-xs transition-all">
+                            Copy Payload JSON
+                        </button>
+                    </div>
+                `;
+            }
+            else if (type === 'addContact') {
+                html = `
+                    <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                        <h3 class="text-base font-extrabold text-slate-900">Tambah Kontak Baru</h3>
+                        <button onclick="closeModal()" class="text-slate-400 hover:text-slate-700"><i class="ph-bold ph-x text-xl"></i></button>
+                    </div>
+                    <form onsubmit="handleAddContactSubmit(event)" class="p-6 space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5">Nama Lengkap</label>
+                            <input type="text" id="contactNameInput" placeholder="Contoh: Budi Santoso" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-900 outline-none focus:border-emerald-600" required>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5">Nomor WhatsApp</label>
+                            <input type="text" id="contactPhoneInput" placeholder="+628123456789" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-900 outline-none focus:border-emerald-600" required>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5">Tag Segmentasi (Pisahkan dengan koma)</label>
+                            <input type="text" id="contactTagsInput" placeholder="VIP, Lead" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-900 outline-none focus:border-emerald-600">
+                        </div>
+                        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl py-2.5 text-sm transition-all shadow-md shadow-emerald-600/25">
+                            Simpan Kontak
+                        </button>
+                    </form>
+                `;
+            }
+            else if (type === 'importCsv') {
+                html = `
+                    <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                        <h3 class="text-base font-extrabold text-slate-900">Import Kontak CSV</h3>
+                        <button onclick="closeModal()" class="text-slate-400 hover:text-slate-700"><i class="ph-bold ph-x text-xl"></i></button>
+                    </div>
+                    <form onsubmit="handleImportCsvSubmit(event)" class="p-6 space-y-4">
+                        <p class="text-xs text-slate-500">Format: <code>Nama, NomorWA, Tag</code> (Satu baris per kontak)</p>
+                        <textarea id="csvDataInput" rows="6" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs text-slate-900 font-mono outline-none focus:border-emerald-600 resize-none" placeholder="Andi,+6281200001,VIP&#10;Bambang,+6281200002,Lead"></textarea>
+                        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl py-2.5 text-sm transition-all shadow-md shadow-emerald-600/25">
+                            Proses Import
+                        </button>
+                    </form>
+                `;
+            }
+
+            content.innerHTML = html;
+            overlay.classList.remove('hidden');
+            void overlay.offsetWidth;
+            overlay.classList.remove('opacity-0');
+            content.classList.remove('scale-95');
+
+            if (type === 'addSession') {
+                setTimeout(() => startRealQrGeneration(), 150);
+            }
+        }
+
+        function fillLoginForm(username, password) {
+            document.getElementById('username').value = username;
+            document.getElementById('password').value = password;
+            closeModal();
+            handleLogin(new Event('submit'));
+        }
+
+        let qrPollInterval = null;
+
+        function closeModal() {
+            if (qrPollInterval) {
+                clearInterval(qrPollInterval);
+                qrPollInterval = null;
+            }
+            const overlay = document.getElementById('modalOverlay');
+            const content = document.getElementById('modalContent');
+            overlay.classList.add('opacity-0');
+            content.classList.add('scale-95');
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+                content.innerHTML = '';
+            }, 200);
+        }
+
+        async function startRealQrGeneration() {
+            const nameInput = document.getElementById('newSessionName');
+            const sessionName = nameInput ? nameInput.value.trim() || 'WhatsApp Utama' : 'WhatsApp Utama';
+            const loader = document.getElementById('qrLoader');
+            const qrImg = document.getElementById('qrImage');
+            const statusText = document.getElementById('qrStatusText');
+
+            if (loader) loader.classList.remove('hidden');
+            if (qrImg) { qrImg.classList.add('hidden'); qrImg.src = ''; }
+            if (statusText) statusText.innerText = '⏳ Menghubungkan ke WhatsApp... Tunggu sebentar.';
+
+            try {
+                const res = await fetch('/api/sessions/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: sessionName })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    const sessionId = data.sessionId;
+                    if (statusText) statusText.innerText = '🔄 Generating QR Code real dari WhatsApp... Harap tunggu (5-15 detik).';
+                    pollQrStatus(sessionId, sessionName);
+                } else {
+                    if (loader) loader.classList.add('hidden');
+                    if (statusText) statusText.innerText = '❌ Gagal membuat sesi: ' + (data.error || 'Server error');
+                }
+            } catch (err) {
+                console.error('API Error:', err);
+                if (loader) loader.classList.add('hidden');
+                if (statusText) statusText.innerText = '❌ Tidak dapat terhubung ke Backend. Pastikan node server.js berjalan di port 3000.';
+            }
+        }
+
+        function pollQrStatus(sessionId, sessionName) {
+            if (qrPollInterval) clearInterval(qrPollInterval);
+            let pollCount = 0;
+            const MAX_POLLS = 60; // 60 x 2s = 2 menit timeout
+
+            const fetchQr = async () => {
+                pollCount++;
+                if (pollCount > MAX_POLLS) {
+                    clearInterval(qrPollInterval);
+                    qrPollInterval = null;
+                    const statusText = document.getElementById('qrStatusText');
+                    if (statusText) statusText.innerText = '⏰ Timeout: QR tidak tersedia. Coba tutup dan buka kembali modal.';
+                    return;
+                }
+
+                try {
+                    const res = await fetch(`/api/sessions/${sessionId}/qr`);
+                    const data = await res.json();
+
+                    const loader = document.getElementById('qrLoader');
+                    const qrImg = document.getElementById('qrImage');
+                    const statusText = document.getElementById('qrStatusText');
+
+                    if (data.success) {
+                        // ✅ Real QR received from Baileys - display it
+                        if (data.qrCodeDataUrl && qrImg) {
+                            qrImg.src = data.qrCodeDataUrl;
+                            qrImg.classList.remove('hidden');
+                            if (loader) loader.classList.add('hidden');
+                            if (statusText) statusText.innerText = '✅ QR Code siap! Buka WhatsApp → Perangkat Tertaut → Tautkan Perangkat → Scan QR ini.';
+                        } else {
+                            // Still waiting for real QR
+                            if (statusText) statusText.innerText = `🔄 Menunggu QR dari WhatsApp... (${pollCount * 2}s)`;
+                        }
+
+                        if (data.status === 'Connected') {
+                            clearInterval(qrPollInterval);
+                            qrPollInterval = null;
+                            
+                            const newSession = {
+                                id: sessionId,
+                                name: sessionName,
+                                phone: data.phone || 'Terhubung',
+                                status: 'Connected',
+                                battery: 100,
+                                lastSeen: 'Just now'
+                            };
+                            
+                            state.sessions = state.sessions.filter(s => s.id !== sessionId);
+                            state.sessions.push(newSession);
+                            state.stats.totalSessions = state.sessions.length;
+                            saveState();
+                            
+                            closeModal();
+                            renderContent('sessions');
+                            showToast(`✅ TERHUBUNG! WhatsApp: ${newSession.phone}`, 'success');
+                        }
+                    }
+                } catch (e) {
+                    console.error('Polling error:', e);
+                }
+            };
+
+            fetchQr();
+            qrPollInterval = setInterval(fetchQr, 2000);
+        }
+
+        function handleAddSessionSubmit(e) {
+            e.preventDefault();
+            const name = document.getElementById('newSessionName').value;
+            const phone = document.getElementById('newSessionPhone').value;
+            const newS = {
+                id: 'S-' + Math.floor(100 + Math.random() * 900),
+                name: name,
+                phone: phone,
+                status: 'Connected',
+                battery: 100,
+                lastSeen: 'Just now'
+            };
+            state.sessions.push(newS);
+            state.stats.totalSessions = state.sessions.length;
+            saveState();
+            closeModal();
+            renderContent('sessions');
+            showToast(`Device ${name} berhasil dihubungkan!`, 'success');
+        }
+
+        function handleAddApiKeySubmit(e) {
+            e.preventDefault();
+            const name = document.getElementById('keyNameInput').value;
+            const newK = {
+                id: 'k_' + Date.now().toString().slice(-4),
+                name: name,
+                key: 'atsuga_live_' + Math.random().toString(36).substring(2, 12),
+                created: new Date().toISOString().split('T')[0],
+                status: 'Active'
+            };
+            state.apikeys.push(newK);
+            saveState();
+            closeModal();
+            renderContent('api');
+            showToast('API Key baru berhasil dibuat!', 'success');
+        }
+
+        function handleAddContactSubmit(e) {
+            e.preventDefault();
+            const name = document.getElementById('contactNameInput').value;
+            const phone = document.getElementById('contactPhoneInput').value;
+            const tags = document.getElementById('contactTagsInput').value || 'General';
+            const newC = {
+                id: 'c_' + Date.now().toString().slice(-4),
+                name: name,
+                phone: phone,
+                tags: tags,
+                created: new Date().toISOString().split('T')[0]
+            };
+            state.contacts.push(newC);
+            saveState();
+            closeModal();
+            renderContent('contacts');
+            showToast('Kontak baru ditambahkan!', 'success');
+        }
+
+        function handleImportCsvSubmit(e) {
+            e.preventDefault();
+            const text = document.getElementById('csvDataInput').value;
+            const lines = text.split('\n');
+            let count = 0;
+            lines.forEach(line => {
+                const parts = line.split(',');
+                if (parts.length >= 2) {
+                    state.contacts.push({
+                        id: 'c_' + Date.now().toString().slice(-4) + Math.random().toString(36).substring(2, 5),
+                        name: parts[0].trim(),
+                        phone: parts[1].trim(),
+                        tags: parts[2] ? parts[2].trim() : 'CSV Import',
+                        created: new Date().toISOString().split('T')[0]
+                    });
+                    count++;
+                }
+            });
+            saveState();
+            closeModal();
+            renderContent('contacts');
+            showToast(`Berhasil mengimpor ${count} kontak!`, 'success');
+        }
+
+        // Run app on load
+        window.onload = initApp;
+    </script>
+</body>
+
+</html>
